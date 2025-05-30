@@ -1,0 +1,1322 @@
+[
+  {
+    "ErrorCode": "0x80070642",
+    "Message": "ERROR_INSTALL_USEREXIT: The installation process was interrupted, often due to user cancellation or a conflict with an existing application, such as Microsoft Edge WebView2 Runtime, during the Autopilot Enrollment Status Page (ESP).",
+    "Context": "App deployment failure during Autopilot ESP, typically for Win32 apps or dependencies like WebView2.",
+    "Solution": "1. Unassign the conflicting app (e.g., WebView2) from the ESP in Intune under Apps > All Apps > select app > Properties > Assignments, and remove from ESP-required groups. 2. Uninstall existing WebView2 Runtime using 'setup.exe --uninstall --msedgewebview --system-level --force-uninstall' in an elevated Command Prompt. 3. Deploy WebView2 with silent install flags: 'MicrosoftEdgeWebView2RuntimeInstallerX64.exe /silent /install'. 4. Check detection logic in Intune by ensuring the app’s registry key (e.g., 'HKLM:\\SOFTWARE\\Microsoft\\EdgeWebView') or file path exists. 5. Verify no pending reboots in 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\PendingFileRenameOperations' and reboot if needed."
+  },
+  {
+    "ErrorCode": "0x8018000a",
+    "Message": "Device is already enrolled in Intune or joined to Microsoft Entra ID by another user, preventing re-enrollment due to conflicting device records.",
+    "Context": "Re-enrollment attempts during Autopilot or manual MDM enrollment, often with reused devices.",
+    "Solution": "1. Sign out of Windows and sign in with the account that enrolled the device, then remove the work account in 'Settings > Accounts > Work Access'. 2. Delete the device record in Intune under Devices > All Devices > select device > Delete. 3. Remove the Entra ID join record in Azure portal under Azure Active Directory > Devices > All Devices > select device > Delete. 4. Re-import the hardware hash using 'Get-WindowsAutoPilotInfo.ps1' and upload it in Intune under Devices > Enroll Devices > Windows Autopilot Devices. 5. Reset the device to factory settings via 'Reset this PC' in Windows Recovery Environment if conflicts persist."
+  },
+  {
+    "ErrorCode": "0x80180014",
+    "Message": "MDM enrollment failure due to stale device records, incorrect device ownership, or restrictions in Autopilot self-deployment or pre-provisioning mode.",
+    "Context": "Autopilot enrollment, especially in self-deploying mode or with outdated hardware hashes.",
+    "Solution": "1. Delete the stale device record in Intune under Devices > All Devices > select device > Delete. 2. Re-upload the hardware hash using 'Get-WindowsAutoPilotInfo.ps1' and import it in Intune under Devices > Enroll Devices > Windows Autopilot Devices. 3. Verify the Autopilot profile is assigned in Intune under Devices > Enroll Devices > Autopilot Profiles. 4. Set device ownership to 'Corporate' in Intune under Devices > All Devices > select device > Properties. 5. Check enrollment restrictions in Intune under Devices > Enroll Devices > Enrollment Restrictions to allow corporate devices."
+  },
+  {
+    "ErrorCode": "0x801c0003",
+    "Message": "User is not authorized to enroll the device, often due to restrictive Entra ID settings or exceeding the device enrollment limit.",
+    "Context": "User-driven enrollment or Autopilot when Entra ID restricts device joins.",
+    "Solution": "1. In Azure portal, go to Azure Active Directory > Devices > Device Settings and set 'Users may join devices to Azure AD' to 'All' or a group including the user. 2. Check enrolled devices in Intune under Users > All Users > select user > Devices, and delete unused devices. 3. Verify the device runs Windows 10 Pro or higher in 'Settings > System > About'; upgrade if on Home edition. 4. Assign an Intune license in Microsoft 365 admin center under Users > Active Users > Licenses. 5. Run 'dsregcmd /status' to confirm 'AzureAdJoined: YES'."
+  },
+  {
+    "ErrorCode": "0x800705b4",
+    "Message": "Securing hardware failed due to TPM issues, timeouts, or network connectivity problems during Autopilot self-deploying mode.",
+    "Context": "Autopilot self-deploying mode on devices with outdated TPM or network issues.",
+    "Solution": "1. Verify TPM 2.0 is present using 'tpm.msc'; update firmware if TPM is 1.2. 2. Avoid self-deploying mode on VMs; use user-driven mode instead. 3. Ensure internet connectivity to Microsoft’s TPM attestation servers during enrollment. 4. Remove invalid Intune certificates in 'certlm.msc' under Personal > Certificates issued by 'Sc_Online_Issuing'. 5. Update Windows via Settings > Windows Update."
+  },
+  {
+    "ErrorCode": "0x87D1041C",
+    "Message": "Application not detected after installation due to incorrect detection rules or missing registry/file paths.",
+    "Context": "Win32 or LOB app deployment during ESP or post-enrollment.",
+    "Solution": "1. Verify detection rules in Intune under Apps > All Apps > select app > Properties > Detection Rules, ensuring file or registry key exists. 2. Check 'HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\Autopilot\\EnrollmentStatusTracking' for app status. 3. Redeploy with updated detection rules, e.g., specify the app’s executable version. 4. Confirm app compatibility with device architecture (x64/x86). 5. Run 'Get-AppxPackage' to verify installation status."
+  },
+  {
+    "ErrorCode": "AADSTS50020",
+    "Message": "Entra ID authentication failed due to unauthorized user account or invalid token during enrollment.",
+    "Context": "User authentication during enrollment or Company Portal sign-in.",
+    "Solution": "1. Assign an Intune license in Microsoft 365 admin center under Users > Active Users > Licenses. 2. Verify credentials by signing into portal.office.com; reset password if needed. 3. Ensure UPN matches Active Directory in Microsoft 365 admin center. 4. Confirm MDM authority is Intune in Intune admin center under Tenant Administration > MDM Authority. 5. Sync Entra ID with 'Start-ADSyncSyncCycle -PolicyType Delta' on AD Connect server."
+  },
+  {
+    "ErrorCode": "0x801901ad",
+    "Message": "Device sync failed due to network issues, proxy restrictions, or blocked Intune endpoints.",
+    "Context": "Enrollment or policy sync during MDM management.",
+    "Solution": "1. Ping 'manage.microsoft.com' to verify connectivity. 2. Check proxy settings in 'Settings > Network & Internet > Proxy'. 3. Update network drivers in Device Manager. 4. Allow Intune endpoints (e.g., 'manage.microsoft.com', 'dm.microsoft.com') on ports 80/443 in firewall. 5. Trigger sync in 'Settings > Accounts > Work Access > Sync'."
+  },
+  {
+    "ErrorCode": "1201400",
+    "Message": "OMA-DM SyncML error due to corrupted management profile or invalid device configuration.",
+    "Context": "MDM enrollment or policy application failures.",
+    "Solution": "1. Remove management profile in 'Settings > Accounts > Work Access'. 2. Reset MDM config via 'ms-settings:workplace'. 3. Re-enroll using Company Portal or Autopilot OOBE. 4. Sync device time in 'Settings > Time & Language'. 5. Update Windows via Settings > Windows Update."
+  },
+  {
+    "ErrorCode": "0x80180018",
+    "Message": "Enrollment failed due to missing Intune or Microsoft 365 license or conflicting MDM authorities.",
+    "Context": "User-driven or Autopilot enrollment with licensing issues.",
+    "Solution": "1. Assign Intune license in Microsoft 365 admin center under Users > Active Users > Licenses. 2. Verify MDM terms of use URL in Entra ID under Mobility > Microsoft Intune. 3. Consolidate MDM authority to Intune if using MDM for Microsoft 365. 4. Check license status in Intune under Users > All Users > select user > Licenses. 5. Reattempt enrollment after 15 minutes."
+  },
+  {
+    "ErrorCode": "0x80070002",
+    "Message": "File not found error during app or policy deployment, often due to missing installer files or corrupt download.",
+    "Context": "Win32 app installation or policy application.",
+    "Solution": "1. Verify app package exists in Intune under Apps > All Apps > select app > Properties. 2. Re-upload the installer in Intune. 3. Check device storage in 'Settings > System > Storage'. 4. Clear Intune cache by deleting 'C:\\ProgramData\\Microsoft\\IntuneManagementExtension'. 5. Retry deployment."
+  },
+  {
+    "ErrorCode": "0x80070005",
+    "Message": "Access denied error during enrollment or app installation, often due to insufficient permissions.",
+    "Context": "MDM enrollment or app deployment with restricted user rights.",
+    "Solution": "1. Ensure user has local admin rights during enrollment. 2. Verify Intune permissions in Intune admin center under Users > All Users > select user > Roles. 3. Run enrollment as admin via elevated Company Portal. 4. Check UAC settings in 'Control Panel > User Accounts > Change User Account Control settings'. 5. Reset device if permissions persist."
+  },
+  {
+    "ErrorCode": "0x800704C7",
+    "Message": "Operation cancelled by user or system during enrollment or app installation.",
+    "Context": "Autopilot ESP or manual app deployment interruptions.",
+    "Solution": "1. Ensure user does not interrupt ESP during enrollment. 2. Disable ESP timeouts in Intune under Devices > Enroll Devices > Windows Autopilot Profiles. 3. Verify app install command line in Intune under Apps > All Apps > select app > Properties. 4. Check event logs in Event Viewer under Windows Logs > Application. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "0x80072EE7",
+    "Message": "Server name resolution failed due to DNS issues or network misconfiguration.",
+    "Context": "Enrollment or sync failures during MDM communication.",
+    "Solution": "1. Run 'nslookup manage.microsoft.com' to verify DNS resolution. 2. Update DNS settings in 'Settings > Network & Internet > Ethernet > DNS'. 3. Flush DNS cache with 'ipconfig /flushdns'. 4. Ensure Intune endpoints are reachable. 5. Collect network logs with 'netsh trace start scenario=InternetClient'."
+  },
+  {
+    "ErrorCode": "0x80072F8F",
+    "Message": "SSL/TLS connection failed due to incorrect date/time or missing certificates.",
+    "Context": "Enrollment or policy sync with certificate issues.",
+    "Solution": "1. Sync device time in 'Settings > Time & Language'. 2. Verify certificates in 'certlm.msc' under Personal > Certificates. 3. Install missing root certificates from Microsoft. 4. Allow SSL traffic to Intune endpoints in firewall. 5. Run 'dsregcmd /status' to check certificate status."
+  },
+  {
+    "ErrorCode": "0x800B0109",
+    "Message": "Certificate chain error during TPM attestation or enrollment.",
+    "Context": "Autopilot self-deploying mode or certificate-based enrollment.",
+    "Solution": "1. Verify TPM 2.0 in 'tpm.msc'. 2. Remove invalid certificates in 'certlm.msc' under Personal > Certificates. 3. Ensure internet connectivity to Microsoft’s certificate servers. 4. Update Windows via Settings > Windows Update. 5. Collect MDM logs with 'mdmdiagnosticstool.exe'."
+  },
+  {
+    "ErrorCode": "0x80180026",
+    "Message": "Enrollment blocked due to MDM coexistence with another MDM solution.",
+    "Context": "Devices with third-party MDM or stale Intune profiles.",
+    "Solution": "1. Remove third-party MDM profiles in 'Settings > Accounts > Work Access'. 2. Delete Intune device record in Intune under Devices > All Devices. 3. Verify single MDM authority in Intune under Tenant Administration > MDM Authority. 4. Re-enroll device. 5. Check for conflicting GPOs."
+  },
+  {
+    "ErrorCode": "0x80180032",
+    "Message": "Autopilot profile download failed due to network issues or missing profile.",
+    "Context": "Autopilot OOBE during profile retrieval.",
+    "Solution": "1. Verify profile assignment in Intune under Devices > Enroll Devices > Autopilot Profiles. 2. Ensure internet connectivity to 'ztd.dds.microsoft.com'. 3. Re-upload hardware hash in Intune. 4. Check Autopilot diagnostics with 'mdmdiagnosticstool.exe /area Autopilot'. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "AADSTS50011",
+    "Message": "Reply address mismatch during Entra ID authentication.",
+    "Context": "User sign-in during enrollment or Company Portal.",
+    "Solution": "1. Verify MDM terms of use URL in Entra ID under Mobility > Microsoft Intune. 2. Sync Entra ID with 'Start-ADSyncSyncCycle -PolicyType Delta'. 3. Clear browser cache on device. 4. Check sign-in logs in Azure portal under Azure Active Directory > Sign-ins. 5. Reattempt sign-in."
+  },
+  {
+    "ErrorCode": "AADSTS50034",
+    "Message": "User account does not exist in the Entra ID tenant.",
+    "Context": "Enrollment with incorrect or unprovisioned user account.",
+    "Solution": "1. Verify user exists in Microsoft 365 admin center under Users > Active Users. 2. Assign Intune license to user. 3. Sync Entra ID with 'Start-ADSyncSyncCycle -PolicyType Delta'. 4. Correct UPN mismatches. 5. Reattempt enrollment with valid credentials."
+  },
+  {
+    "ErrorCode": "1201000",
+    "Message": "OMA-DM authentication error due to invalid credentials or server misconfiguration.",
+    "Context": "MDM enrollment or policy sync failures.",
+    "Solution": "1. Verify user credentials in Microsoft 365 portal. 2. Check MDM authority in Intune under Tenant Administration > MDM Authority. 3. Remove management profile in 'Settings > Accounts > Work Access'. 4. Re-enroll device. 5. Collect SyncML logs with 'mdmdiagnosticstool.exe'."
+  },
+  {
+    "ErrorCode": "1201300",
+    "Message": "OMA-DM server error due to Intune service issues or policy conflicts.",
+    "Context": "Policy application or sync during MDM management.",
+    "Solution": "1. Check Intune service health in Microsoft 365 admin center under Health > Service Health. 2. Remove conflicting policies in Intune under Devices > Configuration Profiles. 3. Trigger sync in 'Settings > Accounts > Work Access > Sync'. 4. Collect MDM logs with 'mdmdiagnosticstool.exe'. 5. Contact Microsoft support if persistent."
+  },
+  {
+    "ErrorCode": "0x80073CF0",
+    "Message": "App installation failed due to corrupt package or storage issues.",
+    "Context": "Microsoft Store app deployment.",
+    "Solution": "1. Verify app package in Intune under Apps > All Apps. 2. Check device storage in 'Settings > System > Storage'. 3. Reset Microsoft Store cache with 'wsreset.exe'. 4. Re-deploy app. 5. Run 'Get-AppxPackage' to check app status."
+  },
+  {
+    "ErrorCode": "0x80180003",
+    "Message": "Enrollment blocked by Intune policy or device compliance issues.",
+    "Context": "User-driven or Autopilot enrollment.",
+    "Solution": "1. Check compliance policies in Intune under Devices > Compliance Policies. 2. Ensure device meets requirements (e.g., BitLocker, updates). 3. Trigger compliance check in 'Settings > Accounts > Work Access > Sync'. 4. Review compliance status in Intune under Devices > All Devices. 5. Adjust policies if overly restrictive."
+  },
+  {
+    "ErrorCode": "0x800B0101",
+    "Message": "Certificate expired or invalid during enrollment.",
+    "Context": "Certificate-based authentication or TPM attestation.",
+    "Solution": "1. Check certificates in 'certlm.msc' under Personal > Certificates. 2. Remove expired certificates issued by 'Sc_Online_Issuing'. 3. Ensure internet connectivity to Microsoft certificate servers. 4. Update Windows via Settings > Windows Update. 5. Collect MDM logs with 'mdmdiagnosticstool.exe'."
+  },
+  {
+    "ErrorCode": "0x87D1B001",
+    "Message": "App installation timed out during ESP.",
+    "Context": "Win32 app deployment during Autopilot ESP.",
+    "Solution": "1. Increase ESP timeout in Intune under Devices > Enroll Devices > Windows Autopilot Profiles. 2. Verify app install command in Intune under Apps > All Apps > Properties. 3. Check device performance in Task Manager. 4. Re-deploy app post-ESP. 5. Review Intune logs with 'mdmdiagnosticstool.exe'."
+  },
+  {
+    "ErrorCode": "0x80180005",
+    "Message": "MDM enrollment failed due to invalid user credentials.",
+    "Context": "User-driven enrollment or Company Portal sign-in.",
+    "Solution": "1. Verify credentials in Microsoft 365 portal. 2. Reset password in Microsoft 365 admin center. 3. Ensure UPN matches Active Directory. 4. Reattempt enrollment via Company Portal. 5. Check sign-in logs in Azure portal under Azure Active Directory > Sign-ins."
+  },
+  {
+    "ErrorCode": "0x80180007",
+    "Message": "Device already managed by another MDM provider.",
+    "Context": "Enrollment conflicts with third-party MDM.",
+    "Solution": "1. Remove third-party MDM profile in 'Settings > Accounts > Work Access'. 2. Delete Intune device record in Intune under Devices > All Devices. 3. Verify single MDM authority in Intune under Tenant Administration > MDM Authority. 4. Re-enroll device. 5. Check for conflicting GPOs."
+  },
+  {
+    "ErrorCode": "0x80180009",
+    "Message": "Enrollment failed due to missing MDM discovery URL.",
+    "Context": "Manual MDM enrollment or misconfigured tenant.",
+    "Solution": "1. Verify MDM discovery URL in Entra ID under Mobility > Microsoft Intune. 2. Set MDM authority to Intune in Intune admin center under Tenant Administration > MDM Authority. 3. Sync Entra ID with 'Start-ADSyncSyncCycle -PolicyType Delta'. 4. Reattempt enrollment. 5. Check tenant settings in Intune."
+  },
+  {
+    "ErrorCode": "0x8018000b",
+    "Message": "Device limit reached for user or tenant in Intune.",
+    "Context": "Enrollment attempts exceeding Intune quotas.",
+    "Solution": "1. Check user’s enrolled devices in Intune under Users > All Users > select user > Devices. 2. Delete unused devices. 3. Increase device limit in Intune under Tenant Administration > Device Enrollment Restrictions. 4. Verify tenant quotas in Microsoft 365 admin center. 5. Reattempt enrollment."
+  },
+  {
+    "ErrorCode": "0x8018000c",
+    "Message": "Enrollment failed due to invalid Autopilot profile.",
+    "Context": "Autopilot OOBE with misconfigured profile.",
+    "Solution": "1. Verify profile in Intune under Devices > Enroll Devices > Autopilot Profiles. 2. Reassign profile to device group. 3. Re-upload hardware hash in Intune. 4. Check Autopilot diagnostics with 'mdmdiagnosticstool.exe /area Autopilot'. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "0x8018000d",
+    "Message": "Device not registered with Autopilot service.",
+    "Context": "Autopilot enrollment with missing hardware hash.",
+    "Solution": "1. Export hardware hash with 'Get-WindowsAutoPilotInfo.ps1'. 2. Import hash in Intune under Devices > Enroll Devices > Windows Autopilot Devices. 3. Assign Autopilot profile. 4. Verify device in Intune under Devices > Windows Autopilot Devices. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "0x8018000e",
+    "Message": "Enrollment failed due to unsupported Windows version.",
+    "Context": "Enrollment on older or Home editions of Windows.",
+    "Solution": "1. Check Windows version in 'Settings > System > About'. 2. Upgrade to Windows 10/11 Pro or higher. 3. Update Windows via Settings > Windows Update. 4. Reattempt enrollment. 5. Verify compatibility in Intune documentation."
+  },
+  {
+    "ErrorCode": "0x8018000f",
+    "Message": "Device blocked by Intune conditional access policy.",
+    "Context": "Enrollment or access with non-compliant device.",
+    "Solution": "1. Check conditional access policies in Azure portal under Azure Active Directory > Security > Conditional Access. 2. Ensure device meets compliance requirements in Intune under Devices > Compliance Policies. 3. Trigger compliance check in 'Settings > Accounts > Work Access > Sync'. 4. Adjust policies if restrictive. 5. Review compliance status in Intune."
+  },
+  {
+    "ErrorCode": "0x80180010",
+    "Message": "Enrollment failed due to missing Intune license.",
+    "Context": "User-driven or Autopilot enrollment without licensing.",
+    "Solution": "1. Assign Intune license in Microsoft 365 admin center under Users > Active Users > Licenses. 2. Verify license status in Intune under Users > All Users > select user > Licenses. 3. Wait 15 minutes for license propagation. 4. Reattempt enrollment. 5. Check audit logs in Intune under Tenant Administration > Audit Logs."
+  },
+  {
+    "ErrorCode": "0x80180011",
+    "Message": "MDM enrollment failed due to network timeout.",
+    "Context": "Enrollment or sync with unstable network.",
+    "Solution": "1. Verify connectivity with 'ping manage.microsoft.com'. 2. Check network stability in 'Settings > Network & Internet'. 3. Allow Intune endpoints in firewall. 4. Retry enrollment. 5. Collect network logs with 'netsh trace start scenario=InternetClient'."
+  },
+  {
+    "ErrorCode": "0x80180012",
+    "Message": "Device not supported for MDM enrollment.",
+    "Context": "Enrollment on incompatible hardware or OS.",
+    "Solution": "1. Check device compatibility in Intune documentation. 2. Verify Windows version in 'Settings > System > About'. 3. Upgrade to supported Windows edition. 4. Reattempt enrollment. 5. Contact Microsoft support for compatibility issues."
+  },
+  {
+    "ErrorCode": "0x80180013",
+    "Message": "Enrollment failed due to invalid MDM scope.",
+    "Context": "Misconfigured MDM user scope in Entra ID.",
+    "Solution": "1. Verify MDM user scope in Entra ID under Mobility > Microsoft Intune. 2. Set scope to 'All' or specific group. 3. Sync Entra ID with 'Start-ADSyncSyncCycle -PolicyType Delta'. 4. Reattempt enrollment. 5. Check tenant settings in Intune."
+  },
+  {
+    "ErrorCode": "0x80180015",
+    "Message": "Enrollment failed due to invalid device state.",
+    "Context": "Autopilot or MDM enrollment with corrupted state.",
+    "Solution": "1. Remove management profile in 'Settings > Accounts > Work Access'. 2. Delete device record in Intune under Devices > All Devices. 3. Re-upload hardware hash in Intune. 4. Reset device via 'Reset this PC'. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "0x80180016",
+    "Message": "Device already enrolled by another user.",
+    "Context": "Re-enrollment attempts with conflicting user accounts.",
+    "Solution": "1. Sign out and sign in with original user account. 2. Remove work account in 'Settings > Accounts > Work Access'. 3. Delete device record in Intune under Devices > All Devices. 4. Re-enroll with correct user. 5. Verify user assignments in Intune."
+  },
+  {
+    "ErrorCode": "0x80180017",
+    "Message": "Enrollment failed due to missing Autopilot deployment profile.",
+    "Context": "Autopilot OOBE without assigned profile.",
+    "Solution": "1. Verify profile in Intune under Devices > Enroll Devices > Autopilot Profiles. 2. Assign profile to device group. 3. Re-upload hardware hash in Intune. 4. Check Autopilot diagnostics with 'mdmdiagnosticstool.exe /area Autopilot'. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "0x80180019",
+    "Message": "Enrollment failed due to invalid TPM configuration.",
+    "Context": "Autopilot self-deploying mode with TPM issues.",
+    "Solution": "1. Verify TPM 2.0 in 'tpm.msc'. 2. Update TPM firmware if outdated. 3. Ensure internet connectivity to Microsoft certificate servers. 4. Remove invalid certificates in 'certlm.msc'. 5. Collect MDM logs with 'mdmdiagnosticstool.exe'."
+  },
+  {
+    "ErrorCode": "0x8018001a",
+    "Message": "Enrollment failed due to device not being Azure AD joined.",
+    "Context": "MDM enrollment requiring Entra ID join.",
+    "Solution": "1. Run 'dsregcmd /status' to check 'AzureAdJoined' status. 2. Join device to Entra ID via 'Settings > Accounts > Work Access > Connect'. 3. Verify join in Azure portal under Azure Active Directory > Devices. 4. Reattempt enrollment. 5. Sync Entra ID with 'Start-ADSyncSyncCycle -PolicyType Delta'."
+  },
+  {
+    "ErrorCode": "0x8018001b",
+    "Message": "Enrollment failed due to unsupported device type.",
+    "Context": "Enrollment on non-Windows or unsupported devices.",
+    "Solution": "1. Check device compatibility in Intune documentation. 2. Verify Windows version in 'Settings > System > About'. 3. Upgrade to supported Windows edition. 4. Reattempt enrollment. 5. Contact Microsoft support for compatibility issues."
+  },
+  {
+    "ErrorCode": "0x8018001c",
+    "Message": "Enrollment failed due to invalid enrollment restrictions.",
+    "Context": "Enrollment blocked by Intune restrictions.",
+    "Solution": "1. Check enrollment restrictions in Intune under Devices > Enroll Devices > Enrollment Restrictions. 2. Allow Windows (MDM) enrollment. 3. Verify user/device group assignments. 4. Reattempt enrollment. 5. Review audit logs in Intune under Tenant Administration > Audit Logs."
+  },
+  {
+    "ErrorCode": "0x8018001d",
+    "Message": "Device not compliant with Intune policies during enrollment.",
+    "Context": "Enrollment or access with non-compliant device.",
+    "Solution": "1. Check compliance policies in Intune under Devices > Compliance Policies. 2. Ensure device meets requirements (e.g., BitLocker, updates). 3. Trigger compliance check in 'Settings > Accounts > Work Access > Sync'. 4. Adjust policies if restrictive. 5. Review compliance status in Intune."
+  },
+  {
+    "ErrorCode": "0x8018001e",
+    "Message": "Enrollment failed due to missing MDM certificate.",
+    "Context": "Certificate-based enrollment or TPM attestation.",
+    "Solution": "1. Check certificates in 'certlm.msc' under Personal > Certificates. 2. Install missing root certificates from Microsoft. 3. Ensure internet connectivity to certificate servers. 4. Update Windows via Settings > Windows Update. 5. Collect MDM logs with 'mdmdiagnosticstool.exe'."
+  },
+  {
+    "ErrorCode": "0x8018001f",
+    "Message": "Enrollment failed due to network proxy issues.",
+    "Context": "Enrollment or sync with proxy restrictions.",
+    "Solution": "1. Check proxy settings in 'Settings > Network & Internet > Proxy'. 2. Allow Intune endpoints (e.g., 'manage.microsoft.com') in proxy. 3. Update network drivers in Device Manager. 4. Retry enrollment. 5. Collect network logs with 'netsh trace start scenario=InternetClient'."
+  },
+  {
+    "ErrorCode": "0x80180020",
+    "Message": "Enrollment failed due to invalid device certificate.",
+    "Context": "Certificate-based authentication or TPM attestation.",
+    "Solution": "1. Check certificates in 'certlm.msc' under Personal > Certificates. 2. Remove invalid certificates issued by 'Sc_Online_Issuing'. 3. Ensure internet connectivity to Microsoft certificate servers. 4. Update Windows via Settings > Windows Update. 5. Collect MDM logs with 'mdmdiagnosticstool.exe'."
+  },
+  {
+    "ErrorCode": "0x80180021",
+    "Message": "Enrollment failed due to Intune service outage.",
+    "Context": "Enrollment or sync during service disruptions.",
+    "Solution": "1. Check Intune service health in Microsoft 365 admin center under Health > Service Health. 2. Wait for service restoration. 3. Retry enrollment. 4. Collect MDM logs with 'mdmdiagnosticstool.exe'. 5. Contact Microsoft support if persistent."
+  },
+  {
+    "ErrorCode": "0x80180022",
+    "Message": "Device not recognized by Intune during enrollment.",
+    "Context": "Autopilot or MDM enrollment with unregistered device.",
+    "Solution": "1. Export hardware hash with 'Get-WindowsAutoPilotInfo.ps1'. 2. Import hash in Intune under Devices > Enroll Devices > Windows Autopilot Devices. 3. Assign Autopilot profile. 4. Verify device in Intune under Devices > Windows Autopilot Devices. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "0x80180023",
+    "Message": "Enrollment failed due to invalid user scope.",
+    "Context": "Misconfigured MDM user scope in Entra ID.",
+    "Solution": "1. Verify MDM user scope in Entra ID under Mobility > Microsoft Intune. 2. Set scope to 'All' or specific group. 3. Sync Entra ID with 'Start-ADSyncSyncCycle -PolicyType Delta'. 4. Reattempt enrollment. 5. Check tenant settings in Intune."
+  },
+  {
+    "ErrorCode": "0x80180024",
+    "Message": "Enrollment failed due to missing Autopilot service connection.",
+    "Context": "Autopilot OOBE with network or service issues.",
+    "Solution": "1. Verify connectivity to 'ztd.dds.microsoft.com'. 2. Check Autopilot diagnostics with 'mdmdiagnosticstool.exe /area Autopilot'. 3. Re-upload hardware hash in Intune. 4. Ensure profile assignment in Intune under Devices > Enroll Devices > Autopilot Profiles. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "0x80180025",
+    "Message": "Enrollment failed due to invalid device ownership.",
+    "Context": "Autopilot enrollment with personal device settings.",
+    "Solution": "1. Set device ownership to 'Corporate' in Intune under Devices > All Devices > select device > Properties. 2. Delete device record in Intune. 3. Re-upload hardware hash in Intune. 4. Verify Autopilot profile assignment. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "0x80180027",
+    "Message": "Enrollment failed due to missing Intune management extension.",
+    "Context": "Win32 app deployment or policy application.",
+    "Solution": "1. Verify Intune Management Extension is installed in 'C:\\Program Files (x86)\\Microsoft Intune Management Extension'. 2. Reinstall extension by triggering sync in 'Settings > Accounts > Work Access > Sync'. 3. Check event logs in Event Viewer under Windows Logs > Application. 4. Update Windows via Settings > Windows Update. 5. Collect Intune logs with 'mdmdiagnosticstool.exe'."
+  },
+  {
+    "ErrorCode": "0x80180028",
+    "Message": "Enrollment failed due to invalid MDM terms of use.",
+    "Context": "Enrollment with misconfigured MDM settings.",
+    "Solution": "1. Verify MDM terms of use URL in Entra ID under Mobility > Microsoft Intune. 2. Set MDM authority to Intune in Intune admin center under Tenant Administration > MDM Authority. 3. Sync Entra ID with 'Start-ADSyncSyncCycle -PolicyType Delta'. 4. Reattempt enrollment. 5. Check tenant settings in Intune."
+  },
+  {
+    "ErrorCode": "0x80180029",
+    "Message": "Enrollment failed due to device not being hybrid Azure AD joined.",
+    "Context": "Hybrid enrollment requiring Entra ID join.",
+    "Solution": "1. Run 'dsregcmd /status' to check 'AzureAdJoined' and 'DomainJoined' status. 2. Join device to hybrid Entra ID via 'Settings > Accounts > Work Access > Connect'. 3. Sync Entra ID with 'Start-ADSyncSyncCycle -PolicyType Delta'. 4. Verify join in Azure portal under Azure Active Directory > Devices. 5. Reattempt enrollment."
+  },
+  {
+    "ErrorCode": "0x8018002a",
+    "Message": "Enrollment failed due to missing MDM enrollment URL.",
+    "Context": "Manual MDM enrollment with misconfigured tenant.",
+    "Solution": "1. Verify MDM enrollment URL in Entra ID under Mobility > Microsoft Intune. 2. Set MDM authority to Intune in Intune admin center under Tenant Administration > MDM Authority. 3. Sync Entra ID with 'Start-ADSyncSyncCycle -PolicyType Delta'. 4. Reattempt enrollment. 5. Check tenant settings in Intune."
+  },
+  {
+    "ErrorCode": "0x8018002b",
+    "Message": "Enrollment failed due to invalid device compliance state.",
+    "Context": "Enrollment or access with non-compliant device.",
+    "Solution": "1. Check compliance policies in Intune under Devices > Compliance Policies. 2. Ensure device meets requirements (e.g., BitLocker, updates). 3. Trigger compliance check in 'Settings > Accounts > Work Access > Sync'. 4. Adjust policies if restrictive. 5. Review compliance status in Intune."
+  },
+  {
+    "ErrorCode": "0x8018002c",
+    "Message": "Enrollment failed due to missing Intune service principal.",
+    "Context": "Enrollment with misconfigured Entra ID service principal.",
+    "Solution": "1. Verify Intune service principal in Azure portal under Azure Active Directory > Enterprise Applications. 2. Reconfigure Intune in Entra ID under Mobility > Microsoft Intune. 3. Sync Entra ID with 'Start-ADSyncSyncCycle -PolicyType Delta'. 4. Reattempt enrollment. 5. Check tenant settings in Intune."
+  },
+  {
+    "ErrorCode": "0x8018002d",
+    "Message": "Enrollment failed due to invalid MDM user scope.",
+    "Context": "Misconfigured MDM user scope in Entra ID.",
+    "Solution": "1. Verify MDM user scope in Entra ID under Mobility > Microsoft Intune. 2. Set scope to 'All' or specific group. 3. Sync Entra ID with 'Start-ADSyncSyncCycle -PolicyType Delta'. 4. Reattempt enrollment. 5. Check tenant settings in Intune."
+  },
+  {
+    "ErrorCode": "0x8018002e",
+    "Message": "Enrollment failed due to missing Autopilot service principal.",
+    "Context": "Autopilot enrollment with misconfigured Entra ID.",
+    "Solution": "1. Verify Autopilot service principal in Azure portal under Azure Active Directory > Enterprise Applications. 2. Reconfigure Autopilot in Entra ID under Mobility > Microsoft Intune. 3. Sync Entra ID with 'Start-ADSyncSyncCycle -PolicyType Delta'. 4. Reattempt enrollment. 5. Check Autopilot diagnostics with 'mdmdiagnosticstool.exe /area Autopilot'."
+  },
+  {
+    "ErrorCode": "0x8018002f",
+    "Message": "Enrollment failed due to invalid Intune tenant configuration.",
+    "Context": "Enrollment with misconfigured tenant settings.",
+    "Solution": "1. Verify MDM authority in Intune under Tenant Administration > MDM Authority. 2. Check tenant settings in Intune admin center. 3. Sync Entra ID with 'Start-ADSyncSyncCycle -PolicyType Delta'. 4. Reattempt enrollment. 5. Contact Microsoft support for tenant issues."
+  },
+  {
+    "ErrorCode": "0x80180030",
+    "Message": "Enrollment failed due to missing MDM discovery service.",
+    "Context": "Manual MDM enrollment with misconfigured tenant.",
+    "Solution": "1. Verify MDM discovery URL in Entra ID under Mobility > Microsoft Intune. 2. Set MDM authority to Intune in Intune admin center under Tenant Administration > MDM Authority. 3. Sync Entra ID with 'Start-ADSyncSyncCycle -PolicyType Delta'. 4. Reattempt enrollment. 5. Check tenant settings in Intune."
+  },
+  {
+    "ErrorCode": "0x80180031",
+    "Message": "Enrollment failed due to invalid device registration state.",
+    "Context": "Autopilot or MDM enrollment with corrupted state.",
+    "Solution": "1. Remove management profile in 'Settings > Accounts > Work Access'. 2. Delete device record in Intune under Devices > All Devices. 3. Re-upload hardware hash in Intune. 4. Reset device via 'Reset this PC'. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "0x80180033",
+    "Message": "Enrollment failed due to missing Intune management profile.",
+    "Context": "MDM enrollment with corrupted profile.",
+    "Solution": "1. Remove management profile in 'Settings > Accounts > Work Access'. 2. Reset MDM config via 'ms-settings:workplace'. 3. Re-enroll using Company Portal or Autopilot OOBE. 4. Sync device time in 'Settings > Time & Language'. 5. Collect MDM logs with 'mdmdiagnosticstool.exe'."
+  },
+  {
+    "ErrorCode": "0x80180034",
+    "Message": "Enrollment failed due to invalid MDM enrollment type.",
+    "Context": "Enrollment with incorrect enrollment mode.",
+    "Solution": "1. Verify enrollment type in Intune under Devices > Enroll Devices > Enrollment Restrictions. 2. Ensure correct Autopilot profile is assigned. 3. Re-upload hardware hash in Intune. 4. Reattempt enrollment. 5. Check Autopilot diagnostics with 'mdmdiagnosticstool.exe /area Autopilot'."
+  },
+  {
+    "ErrorCode": "0x80180035",
+    "Message": "Enrollment failed due to missing Intune service connection.",
+    "Context": "Enrollment or sync with service issues.",
+    "Solution": "1. Check Intune service health in Microsoft 365 admin center under Health > Service Health. 2. Verify connectivity to 'manage.microsoft.com'. 3. Retry enrollment. 4. Collect MDM logs with 'mdmdiagnosticstool.exe'. 5. Contact Microsoft support if persistent."
+  },
+  {
+    "ErrorCode": "0x80180036",
+    "Message": "Enrollment failed due to invalid Autopilot tenant configuration.",
+    "Context": "Autopilot enrollment with misconfigured tenant.",
+    "Solution": "1. Verify Autopilot settings in Intune under Devices > Enroll Devices > Windows Autopilot Deployment Program. 2. Check tenant settings in Intune admin center. 3. Sync Entra ID with 'Start-ADSyncSyncCycle -PolicyType Delta'. 4. Reattempt enrollment. 5. Contact Microsoft support for tenant issues."
+  },
+  {
+    "ErrorCode": "0x80180037",
+    "Message": "Enrollment failed due to missing MDM service principal.",
+    "Context": "Enrollment with misconfigured Entra ID service principal.",
+    "Solution": "1. Verify Intune service principal in Azure portal under Azure Active Directory > Enterprise Applications. 2. Reconfigure Intune in Entra ID under Mobility > Microsoft Intune. 3. Sync Entra ID with 'Start-ADSyncSyncCycle -PolicyType Delta'. 4. Reattempt enrollment. 5. Check tenant settings in Intune."
+  },
+  {
+    "ErrorCode": "0x80180038",
+    "Message": "Enrollment failed due to invalid device compliance policy.",
+    "Context": "Enrollment or access with non-compliant device.",
+    "Solution": "1. Check compliance policies in Intune under Devices > Compliance Policies. 2. Ensure device meets requirements (e.g., BitLocker, updates). 3. Trigger compliance check in 'Settings > Accounts > Work Access > Sync'. 4. Adjust policies if restrictive. 5. Review compliance status in Intune."
+  },
+  {
+    "ErrorCode": "0x80180039",
+    "Message": "Enrollment failed due to missing Autopilot device registration.",
+    "Context": "Autopilot enrollment with unregistered device.",
+    "Solution": "1. Export hardware hash with 'Get-WindowsAutoPilotInfo.ps1'. 2. Import hash in Intune under Devices > Enroll Devices > Windows Autopilot Devices. 3. Assign Autopilot profile. 4. Verify device in Intune under Devices > Windows Autopilot Devices. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "0x8018003a",
+    "Message": "Enrollment failed due to invalid MDM discovery configuration.",
+    "Context": "Manual MDM enrollment with misconfigured tenant.",
+    "Solution": "1. Verify MDM discovery URL in Entra ID under Mobility > Microsoft Intune. 2. Set MDM authority to Intune in Intune admin center under Tenant Administration > MDM Authority. 3. Sync Entra ID with 'Start-ADSyncSyncCycle -PolicyType Delta'. 4. Reattempt enrollment. 5. Check tenant settings in Intune."
+  },
+  {
+    "ErrorCode": "0x8018003b",
+    "Message": "Enrollment failed due to missing Intune tenant license.",
+    "Context": "Enrollment with unlicensed tenant.",
+    "Solution": "1. Verify Intune license in Microsoft 365 admin center under Billing > Licenses. 2. Assign licenses to users in Users > Active Users > Licenses. 3. Wait 15 minutes for propagation. 4. Reattempt enrollment. 5. Check audit logs in Intune under Tenant Administration > Audit Logs."
+  },
+  {
+    "ErrorCode": "0x8018003c",
+    "Message": "Enrollment failed due to invalid Autopilot service configuration.",
+    "Context": "Autopilot enrollment with misconfigured service.",
+    "Solution": "1. Verify Autopilot settings in Intune under Devices > Enroll Devices > Windows Autopilot Deployment Program. 2. Check tenant settings in Intune admin center. 3. Sync Entra ID with 'Start-ADSyncSyncCycle -PolicyType Delta'. 4. Reattempt enrollment. 5. Contact Microsoft support for service issues."
+  },
+  {
+    "ErrorCode": "0x8018003d",
+    "Message": "Enrollment failed due to missing MDM enrollment profile.",
+    "Context": "MDM enrollment with corrupted profile.",
+    "Solution": "1. Remove management profile in 'Settings > Accounts > Work Access'. 2. Reset MDM config via 'ms-settings:workplace'. 3. Re-enroll using Company Portal or Autopilot OOBE. 4. Sync device time in 'Settings > Time & Language'. 5. Collect MDM logs with 'mdmdiagnosticstool.exe'."
+  },
+  {
+    "ErrorCode": "0x8018003e",
+    "Message": "Enrollment failed due to invalid device registration configuration.",
+    "Context": "Autopilot or MDM enrollment with corrupted state.",
+    "Solution": "1. Remove management profile in 'Settings > Accounts > Work Access'. 2. Delete device record in Intune under Devices > All Devices. 3. Re-upload hardware hash in Intune. 4. Reset device via 'Reset this PC'. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "0x8018003f",
+    "Message": "Enrollment failed due to missing Intune service configuration.",
+    "Context": "Enrollment or sync with misconfigured service.",
+    "Solution": "1. Verify Intune service settings in Intune admin center under Tenant Administration. 2. Check tenant settings in Intune admin center. 3. Sync Entra ID with 'Start-ADSyncSyncCycle -PolicyType Delta'. 4. Reattempt enrollment. 5. Contact Microsoft support for service issues."
+  },
+  {
+    "ErrorCode": "0x80180040",
+    "Message": "Enrollment failed due to invalid MDM service configuration.",
+    "Context": "Manual MDM enrollment with misconfigured tenant.",
+    "Solution": "1. Verify MDM discovery URL in Entra ID under Mobility > Microsoft Intune. 2. Set MDM authority to Intune in Intune admin center under Tenant Administration > MDM Authority. 3. Sync Entra ID with 'Start-ADSyncSyncCycle -PolicyType Delta'. 4. Reattempt enrollment. 5. Check tenant settings in Intune."
+  },
+  {
+    "ErrorCode": "0x80180041",
+    "Message": "Enrollment failed due to missing Autopilot tenant license.",
+    "Context": "Autopilot enrollment with unlicensed tenant.",
+    "Solution": "1. Verify Autopilot license in Microsoft 365 admin center under Billing > Licenses. 2. Assign licenses to users in Users > Active Users > Licenses. 3. Wait 15 minutes for propagation. 4. Reattempt enrollment. 5. Check audit logs in Intune under Tenant Administration > Audit Logs."
+  },
+  {
+    "ErrorCode": "0x80180042",
+    "Message": "Enrollment failed due to invalid Intune management configuration.",
+    "Context": "Enrollment with misconfigured Intune settings.",
+    "Solution": "1. Verify Intune settings in Intune admin center under Tenant Administration. 2. Check tenant settings in Intune admin center. 3. Sync Entra ID with 'Start-ADSyncSyncCycle -PolicyType Delta'. 4. Reattempt enrollment. 5. Contact Microsoft support for configuration issues."
+  },
+  {
+    "ErrorCode": "0x80180043",
+    "Message": "Enrollment failed due to missing MDM service connection.",
+    "Context": "Enrollment or sync with service issues.",
+    "Solution": "1. Check Intune service health in Microsoft 365 admin center under Health > Service Health. 2. Verify connectivity to 'manage.microsoft.com'. 3. Retry enrollment. 4. Collect MDM logs with 'mdmdiagnosticstool.exe'. 5. Contact Microsoft support if persistent."
+  },
+  {
+    "ErrorCode": "0x80180044",
+    "Message": "Enrollment failed due to invalid Autopilot device configuration.",
+    "Context": "Autopilot enrollment with misconfigured device.",
+    "Solution": "1. Export hardware hash with 'Get-WindowsAutoPilotInfo.ps1'. 2. Import hash in Intune under Devices > Enroll Devices > Windows Autopilot Devices. 3. Assign Autopilot profile. 4. Verify device in Intune under Devices > Windows Autopilot Devices. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "0x80180045",
+    "Message": "Enrollment failed due to missing Intune management service.",
+    "Context": "Enrollment or sync with misconfigured service.",
+    "Solution": "1. Verify Intune service settings in Intune admin center under Tenant Administration. 2. Check tenant settings in Intune admin center. 3. Sync Entra ID with 'Start-ADSyncSyncCycle -PolicyType Delta'. 4. Reattempt enrollment. 5. Contact Microsoft support for service issues."
+  },
+  {
+    "ErrorCode": "0x80180046",
+    "Message": "Enrollment failed due to invalid MDM enrollment configuration.",
+    "Context": "Manual MDM enrollment with misconfigured tenant.",
+    "Solution": "1. Verify MDM discovery URL in Entra ID under Mobility > Microsoft Intune. 2. Set MDM authority to Intune in Intune admin center under Tenant Administration > MDM Authority. 3. Sync Entra ID with 'Start-ADSyncSyncCycle -PolicyType Delta'. 4. Reattempt enrollment. 5. Check tenant settings in Intune."
+  },
+  {
+    "ErrorCode": "0x80180047",
+    "Message": "Enrollment failed due to missing Autopilot management profile.",
+    "Context": "Autopilot enrollment with corrupted profile.",
+    "Solution": "1. Remove management profile in 'Settings > Accounts > Work Access'. 2. Reset MDM config via 'ms-settings:workplace'. 3. Re-enroll using Company Portal or Autopilot OOBE. 4. Sync device time in 'Settings > Time & Language'. 5. Collect MDM logs with 'mdmdiagnosticstool.exe'."
+  },
+  {
+    "ErrorCode": "0x80180048",
+    "Message": "Enrollment failed due to invalid Intune service principal configuration.",
+    "Context": "Enrollment with misconfigured Entra ID service principal.",
+    "Solution": "1. Verify Intune service principal in Azure portal under Azure Active Directory > Enterprise Applications. 2. Reconfigure Intune in Entra ID under Mobility > Microsoft Intune. 3. Sync Entra ID with 'Start-ADSyncSyncCycle -PolicyType Delta'. 4. Reattempt enrollment. 5. Check tenant settings in Intune."
+  },
+  {
+    "ErrorCode": "0x80180049",
+    "Message": "Enrollment failed due to missing MDM tenant license.",
+    "Context": "Enrollment with unlicensed tenant.",
+    "Solution": "1. Verify Intune license in Microsoft 365 admin center under Billing > Licenses. 2. Assign licenses to users in Users > Active Users > Licenses. 3. Wait 15 minutes for propagation. 4. Reattempt enrollment. 5. Check audit logs in Intune under Tenant Administration > Audit Logs."
+  },
+  {
+    "ErrorCode": "0x8018004a",
+    "Message": "Enrollment failed due to invalid Autopilot service principal configuration.",
+    "Context": "Autopilot enrollment with misconfigured Entra ID.",
+    "Solution": "1. Verify Autopilot service principal in Azure portal under Azure Active Directory > Enterprise Applications. 2. Reconfigure Autopilot in Entra ID under Mobility > Microsoft Intune. 3. Sync Entra ID with 'Start-ADSyncSyncCycle -PolicyType Delta'. 4. Reattempt enrollment. 5. Check Autopilot diagnostics with 'mdmdiagnosticstool.exe /area Autopilot'."
+  },
+  {
+    "ErrorCode": "0x800700a0",
+    "Message": "Operation failed due to invalid or corrupted system files during Autopilot or app deployment.",
+    "Context": "Autopilot enrollment or Win32 app installation with system file issues.",
+    "Solution": "1. Run 'sfc /scannow' in an elevated Command Prompt to repair system files. 2. Verify Windows integrity with 'DISM /Online /Cleanup-Image /RestoreHealth'. 3. Reattempt enrollment or app deployment. 4. Check event logs in Event Viewer under Windows Logs > System. 5. Reset device via 'Reset this PC' if issues persist."
+  },
+  {
+    "ErrorCode": "0x800700b7",
+    "Message": "Device registration failed due to duplicate device records or conflicts in Intune or Entra ID.",
+    "Context": "Autopilot or MDM enrollment with existing device records.",
+    "Solution": "1. Delete duplicate device records in Intune under Devices > All Devices > select device > Delete. 2. Remove Entra ID record in Azure portal under Azure Active Directory > Devices > All Devices > select device > Delete. 3. Re-upload hardware hash using 'Get-WindowsAutoPilotInfo.ps1' in Intune under Devices > Enroll Devices > Windows Autopilot Devices. 4. Reattempt enrollment. 5. Verify no conflicting GPOs."
+  },
+  {
+    "ErrorCode": "0x80070643",
+    "Message": "Installation failed due to corrupted installer or insufficient permissions during app deployment.",
+    "Context": "Win32 or LOB app installation during ESP or post-enrollment.",
+    "Solution": "1. Re-upload the app package in Intune under Apps > All Apps > select app > Properties. 2. Ensure user has local admin rights during installation. 3. Verify installer integrity by re-downloading the package. 4. Clear Intune cache by deleting 'C:\\ProgramData\\Microsoft\\IntuneManagementExtension'. 5. Retry deployment."
+  },
+  {
+    "ErrorCode": "0x80070652",
+    "Message": "Another installation is in progress, causing a conflict during app deployment.",
+    "Context": "Win32 app installation during ESP or concurrent installations.",
+    "Solution": "1. Check for pending installations in Task Manager under Processes. 2. Reboot device to clear pending installations. 3. Verify no pending reboots in 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\PendingFileRenameOperations'. 4. Redeploy app in Intune under Apps > All Apps. 5. Monitor installation status in Intune logs."
+  },
+  {
+    "ErrorCode": "0x80070774",
+    "Message": "Domain join failed due to connectivity issues with the domain controller during Offline Domain Join (ODJ).",
+    "Context": "Hybrid Join or Autopilot with ODJ blob application.",
+    "Solution": "1. Verify connectivity to domain controller with 'ping <domain_controller>'. 2. Check ODJ blob validity in Intune under Devices > Enroll Devices > Windows Autopilot Devices. 3. Re-run 'Get-WindowsAutoPilotInfo.ps1' to generate new ODJ blob. 4. Ensure Intune Connector is active in on-premises AD. 5. Retry domain join."
+  },
+  {
+    "ErrorCode": "0x80090016",
+    "Message": "Keyset does not exist, often due to TPM or certificate issues during device attestation.",
+    "Context": "Autopilot self-deploying mode or certificate-based enrollment.",
+    "Solution": "1. Verify TPM 2.0 in 'tpm.msc'. 2. Clear TPM using 'tpm.msc > Clear TPM'. 3. Remove invalid certificates in 'certlm.msc' under Personal > Certificates. 4. Ensure connectivity to Microsoft attestation servers. 5. Collect MDM logs with 'mdmdiagnosticstool.exe'."
+  },
+  {
+    "ErrorCode": "0x801c0033",
+    "Message": "Enrollment failed due to conditional access policy blocking device registration.",
+    "Context": "User-driven or Autopilot enrollment with restrictive policies.",
+    "Solution": "1. Check conditional access policies in Azure portal under Azure Active Directory > Security > Conditional Access. 2. Ensure device meets compliance requirements in Intune under Devices > Compliance Policies. 3. Trigger compliance check in 'Settings > Accounts > Work Access > Sync'. 4. Adjust policies if overly restrictive. 5. Review compliance status in Intune."
+  },
+  {
+    "ErrorCode": "0x801c03ea",
+    "Message": "Authentication failed due to invalid or expired AAD token during enrollment.",
+    "Context": "User sign-in during Autopilot or Company Portal authentication.",
+    "Solution": "1. Verify user credentials in Microsoft 365 portal. 2. Reset password in Microsoft 365 admin center. 3. Clear browser cache on device. 4. Sync En-tra ID with 'Start-ADSyncSyncCycle -PolicyType Delta'. 5. Reattempt sign-in."
+  },
+  {
+    "ErrorCode": "0x818001E",
+    "Message": "Device health attestation failed due to TPM or firmware issues.",
+    "Context": "Autopilot self-deploying mode requiring TPM attestation.",
+    "Solution": "1. Verify TPM 2.0 in 'tpm.msc'. 2. Update TPM firmware if outdated. 3. Ensure connectivity to Microsoft attestation servers. 4. Remove invalid certificates in 'certlm.msc' under Personal > Certificates. 5. Collect MDM logs with 'mdmdiagnosticstool.exe'."
+  },
+  {
+    "ErrorCode": "0x80004005",
+    "Message": "Unspecified error during enrollment or policy application, often due to network or configuration issues.",
+    "Context": "MDM enrollment or policy sync with Intune.",
+    "Solution": "1. Verify connectivity with 'ping manage.microsoft.com'. 2. Check Intune service health in Microsoft 365 admin center under Health > Service Health. 3. Sync device time in 'Settings > Time & Language'. 4. Collect MDM logs with 'mdmdiagnosticstool.exe'. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "0x801C03F2",
+    "Message": "Device preparation failed due to invalid Autopilot profile or configuration.",
+    "Context": "Autopilot OOBE during profile application.",
+    "Solution": "1. Verify profile assignment in Intune under Devices > Enroll Devices > Autopilot Profiles. 2. Re-upload hardware hash using 'Get-WindowsAutoPilotInfo.ps1'. 3. Check Autopilot diagnostics with 'mdmdiagnosticstool.exe /area Autopilot'. 4. Reassign profile to device group. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "Invalid_AAD_Token",
+    "Message": "Authentication failed due to invalid or expired Azure AD token.",
+    "Context": "User sign-in during enrollment or Company Portal authentication.",
+    "Solution": "1. Verify credentials in Microsoft 365 portal. 2. Reset password in Microsoft 365 admin center. 3. Clear browser cache on device. 4. Sync Entra ID with 'Start-ADSyncSyncCycle -PolicyType Delta'. 5. Reattempt sign-in."
+  },
+  {
+    "ErrorCode": "Invalid_User_Token",
+    "Message": "User authentication failed due to invalid or unprovisioned user token.",
+    "Context": "Enrollment or sign-in with incorrect user account.",
+    "Solution": "1. Verify user exists in Microsoft 365 admin center under Users > Active Users. 2. Assign Intune license to user. 3. Sync Entra ID with 'Start-ADSyncSyncCycle -PolicyType Delta'. 4. Correct UPN mismatches. 5. Reattempt enrollment."
+  },
+  {
+    "ErrorCode": "MDM_Discovery_Failed",
+    "Message": "MDM discovery service failed due to misconfigured tenant or network issues.",
+    "Context": "Manual MDM enrollment with incorrect MDM URLs.",
+    "Solution": "1. Verify MDM discovery URL in Entra ID under Mobility > Microsoft Intune. 2. Set MDM authority to Intune in Intune admin center under Tenant Administration > MDM Authority. 3. Sync Entra ID with 'Start-ADSyncSyncCycle -PolicyType Delta'. 4. Reattempt enrollment. 5. Check tenant settings in Intune."
+  },
+  {
+    "ErrorCode": "Enrollment_MDM_Failed",
+    "Message": "MDM enrollment failed due to configuration errors or network issues.",
+    "Context": "MDM enrollment during Autopilot or manual setup.",
+    "Solution": "1. Verify MDM settings in Entra ID under Mobility > Microsoft Intune. 2. Check connectivity to 'manage.microsoft.com'. 3. Remove management profile in 'Settings > Accounts > Work Access'. 4. Re-enroll device. 5. Collect MDM logs with 'mdmdiagnosticstool.exe'."
+  },
+  {
+    "ErrorCode": "DeviceCapReached",
+    "Message": "Device limit reached for tenant in Intune, preventing new enrollments.",
+    "Context": "Enrollment attempts exceeding tenant device quotas.",
+    "Solution": "1. Check tenant device limit in Intune under Tenant Administration > Device Enrollment Restrictions. 2. Delete unused devices in Intune under Devices > All Devices. 3. Verify tenant quotas in Microsoft 365 admin center. 4. Reattempt enrollment. 5. Contact Microsoft support for quota adjustments."
+  },
+  {
+    "ErrorCode": "UserDeviceCapReached",
+    "Message": "User device limit reached in Intune, blocking further enrollments.",
+    "Context": "User-driven enrollment exceeding per-user device limits.",
+    "Solution": "1. Check user’s enrolled devices in Intune under Users > All Users > select user > Devices. 2. Delete unused devices. 3. Increase device limit in Intune under Tenant Administration > Device Enrollment Restrictions. 4. Reattempt enrollment. 5. Check audit logs in Intune."
+  },
+  {
+    "ErrorCode": "DeviceNotSupported",
+    "Message": "Device is not supported for MDM enrollment due to incompatible hardware or OS.",
+    "Context": "Enrollment on non-Windows or unsupported Windows editions.",
+    "Solution": "1. Check device compatibility in Intune documentation. 2. Verify Windows version in 'Settings > System > About'. 3. Upgrade to Windows 10/11 Pro or higher. 4. Reattempt enrollment. 5. Contact Microsoft support for compatibility issues."
+  },
+  {
+    "ErrorCode": "NotLicensedForMDM",
+    "Message": "Enrollment failed due to missing MDM license for tenant.",
+    "Context": "MDM enrollment with unlicensed tenant.",
+    "Solution": "1. Verify Intune license in Microsoft 365 admin center under Billing > Licenses. 2. Assign licenses to users in Users > Active Users > Licenses. 3. Wait 15 minutes for propagation. 4. Reattempt enrollment. 5. Check audit logs in Intune under Tenant Administration > Audit Logs."
+  },
+  {
+    "ErrorCode": "UserNotLicensedForMDM",
+    "Message": "User lacks Intune license, preventing MDM enrollment.",
+    "Context": "User-driven or Autopilot enrollment without user licensing.",
+    "Solution": "1. Assign Intune license in Microsoft 365 admin center under Users > Active Users > Licenses. 2. Verify license status in Intune under Users > All Users > select user > Licenses. 3. Wait 15 minutes for license propagation. 4. Reattempt enrollment. 5. Check audit logs in Intune."
+  },
+  {
+    "ErrorCode": "MdmServiceUnreachable",
+    "Message": "MDM service is unreachable due to network issues or Intune service outage.",
+    "Context": "Enrollment or policy sync during service disruptions.",
+    "Solution": "1. Check Intune service health in Microsoft 365 admin center under Health > Service Health. 2. Verify connectivity with 'ping manage.microsoft.com'. 3. Retry enrollment. 4. Collect MDM logs with 'mdmdiagnosticstool.exe'. 5. Contact Microsoft support if persistent."
+  },
+  {
+    "ErrorCode": "MdmTermsOfUseDeclined",
+    "Message": "Enrollment failed because user declined MDM terms of use.",
+    "Context": "User-driven enrollment during Company Portal sign-in.",
+    "Solution": "1. Instruct user to accept MDM terms of use in Company Portal. 2. Verify MDM terms URL in Entra ID under Mobility > Microsoft Intune. 3. Reattempt enrollment. 4. Check sign-in logs in Azure portal under Azure Active Directory > Sign-ins. 5. Sync Entra ID with 'Start-ADSyncSyncCycle -PolicyType Delta'."
+  },
+  {
+    "ErrorCode": "DeviceAlreadyEnrolled",
+    "Message": "Device is already enrolled by another user or MDM provider.",
+    "Context": "Re-enrollment attempts with conflicting device records.",
+    "Solution": "1. Sign out and sign in with original user account. 2. Remove work account in 'Settings > Accounts > Work Access'. 3. Delete device record in Intune under Devices > All Devices. 4. Re-enroll with correct user. 5. Verify user assignments in Intune."
+  },
+  {
+    "ErrorCode": "MdmAuthorityNotSet",
+    "Message": "MDM authority is not configured in Intune, blocking enrollment.",
+    "Context": "MDM enrollment with misconfigured tenant settings.",
+    "Solution": "1. Set MDM authority to Intune in Intune admin center under Tenant Administration > MDM Authority. 2. Verify MDM settings in Entra ID under Mobility > Microsoft Intune. 3. Sync Entra ID with 'Start-ADSyncSyncCycle -PolicyType Delta'. 4. Reattempt enrollment. 5. Check tenant settings in Intune."
+  },
+  {
+    "ErrorCode": "MdmInvalidUrn",
+    "Message": "Enrollment failed due to invalid MDM URN configuration.",
+    "Context": "Manual MDM enrollment with misconfigured tenant.",
+    "Solution": "1. Verify MDM discovery URL in Entra ID under Mobility > Microsoft Intune. 2. Set MDM authority to Intune in Intune admin center under Tenant Administration > MDM Authority. 3. Sync Entra ID with 'Start-ADSyncSyncCycle -PolicyType Delta'. 4. Reattempt enrollment. 5. Check tenant settings in Intune."
+  },
+  {
+    "ErrorCode": "MdmInstanceNameMismatch",
+    "Message": "Enrollment failed due to MDM instance name mismatch in configuration.",
+    "Context": "MDM enrollment with incorrect tenant settings.",
+    "Solution": "1. Verify MDM settings in Entra ID under Mobility > Microsoft Intune. 2. Check tenant settings in Intune admin center under Tenant Administration. 3. Sync Entra ID with 'Start-ADSyncSyncCycle -PolicyType Delta'. 4. Reattempt enrollment. 5. Contact Microsoft support for tenant issues."
+  },
+  {
+    "ErrorCode": "AutopilotDDSNoDomainInfo",
+    "Message": "Autopilot failed to retrieve domain information during enrollment.",
+    "Context": "Hybrid Join or ODJ during Autopilot OOBE.",
+    "Solution": "1. Verify Intune Connector is active in on-premises AD. 2. Check ODJ blob in Intune under Devices > Enroll Devices > Windows Autopilot Devices. 3. Re-upload hardware hash using 'Get-WindowsAutoPilotInfo.ps1'. 4. Ensure connectivity to domain controller. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "AutopilotDDSNoNetwork",
+    "Message": "Autopilot enrollment failed due to no network connection.",
+    "Context": "Autopilot OOBE with network issues.",
+    "Solution": "1. Verify network connectivity with 'ping ztd.dds.microsoft.com'. 2. Update network drivers in Device Manager. 3. Check proxy settings in 'Settings > Network & Internet > Proxy'. 4. Retry enrollment. 5. Collect network logs with 'netsh trace start scenario=InternetClient'."
+  },
+  {
+    "ErrorCode": "AutopilotDDSNetworkError",
+    "Message": "Network error occurred during Autopilot profile retrieval.",
+    "Context": "Autopilot OOBE with unstable network.",
+    "Solution": "1. Verify connectivity to 'ztd.dds.microsoft.com'. 2. Check network stability in 'Settings > Network & Internet'. 3. Flush DNS cache with 'ipconfig /flushdns'. 4. Retry enrollment. 5. Collect Autopilot diagnostics with 'mdmdiagnosticstool.exe /area Autopilot'."
+  },
+  {
+    "ErrorCode": "AutopilotZTDNoNetwork",
+    "Message": "Autopilot Zero Touch Deployment failed due to lack of network connectivity.",
+    "Context": "Autopilot self-deploying mode with network issues.",
+    "Solution": "1. Verify connectivity to 'ztd.dds.microsoft.com'. 2. Update network drivers in Device Manager. 3. Check proxy settings in 'Settings > Network & Internet > Proxy'. 4. Retry enrollment. 5. Collect network logs with 'netsh trace start scenario=InternetClient'."
+  },
+  {
+    "ErrorCode": "AutopilotZTDNoConfig",
+    "Message": "Autopilot Zero Touch Deployment failed due to missing configuration.",
+    "Context": "Autopilot self-deploying mode with no assigned profile.",
+    "Solution": "1. Verify profile assignment in Intune under Devices > Enroll Devices > Autopilot Profiles. 2. Re-upload hardware hash using 'Get-WindowsAutoPilotInfo.ps1'. 3. Assign profile to device group. 4. Check Autopilot diagnostics with 'mdmdiagnosticstool.exe /area Autopilot'. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "AutopilotZTDConfigRetrievalFailed",
+    "Message": "Failed to retrieve Autopilot configuration due to service or network issues.",
+    "Context": "Autopilot OOBE during profile download.",
+    "Solution": "1. Check Intune service health in Microsoft 365 admin center under Health > Service Health. 2. Verify connectivity to 'ztd.dds.microsoft.com'. 3. Re-upload hardware hash in Intune. 4. Check Autopilot diagnostics with 'mdmdiagnosticstool.exe /area Autopilot'. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "AutopilotAssignmentNotTargeted",
+    "Message": "Autopilot profile not assigned to the device.",
+    "Context": "Autopilot enrollment with missing profile assignment.",
+    "Solution": "1. Verify profile in Intune under Devices > Enroll Devices > Autopilot Profiles. 2. Assign profile to device group. 3. Re-upload hardware hash in Intune. 4. Check Autopilot diagnostics with 'mdmdiagnosticstool.exe /area Autopilot'. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "AutopilotProfileDownloadFailed",
+    "Message": "Failed to download Autopilot profile due to network or service issues.",
+    "Context": "Autopilot OOBE during profile retrieval.",
+    "Solution": "1. Verify connectivity to 'ztd.dds.microsoft.com'. 2. Check Intune service health in Microsoft 365 admin center under Health > Service Health. 3. Re-upload hardware hash in Intune. 4. Check Autopilot diagnostics with 'mdmdiagnosticstool.exe /area Autopilot'. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "AutopilotDjpConfigNotFound",
+    "Message": "Domain Join profile configuration not found during Autopilot.",
+    "Context": "Hybrid Join or ODJ during Autopilot OOBE.",
+    "Solution": "1. Verify Intune Connector is active in on-premises AD. 2. Check ODJ blob in Intune under Devices > Enroll Devices > Windows Autopilot Devices. 3. Re-upload hardware hash using 'Get-WindowsAutoPilotInfo.ps1'. 4. Ensure profile assignment in Intune. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "AutopilotDjpMissingComputerObject",
+    "Message": "Computer object missing in Active Directory during domain join.",
+    "Context": "Hybrid Join or ODJ during Autopilot.",
+    "Solution": "1. Verify Intune Connector is active in on-premises AD. 2. Check computer object in Active Directory Users and Computers. 3. Re-upload hardware hash using 'Get-WindowsAutoPilotInfo.ps1'. 4. Ensure connectivity to domain controller. 5. Retry domain join."
+  },
+  {
+    "ErrorCode": "AutopilotDjpNoOuSpecified",
+    "Message": "No Organizational Unit (OU) specified for domain join in Autopilot.",
+    "Context": "Hybrid Join or ODJ during Autopilot OOBE.",
+    "Solution": "1. Verify OU settings in Intune Connector configuration. 2. Specify OU in Intune under Devices > Enroll Devices > Windows Autopilot Devices. 3. Re-upload hardware hash using 'Get-WindowsAutoPilotInfo.ps1'. 4. Ensure Intune Connector is active. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "AutopilotDjpPrecheckFailed",
+    "Message": "Pre-check for domain join failed due to configuration or connectivity issues.",
+    "Context": "Hybrid Join or ODJ during Autopilot.",
+    "Solution": "1. Verify connectivity to domain controller with 'ping <domain_controller>'. 2. Check Intune Connector status in on-premises AD. 3. Re-upload hardware hash using 'Get-WindowsAutoPilotInfo.ps1'. 4. Ensure ODJ blob validity in Intune. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "AutopilotHybridAadjNotSupported",
+    "Message": "Hybrid Azure AD Join not supported for the device or configuration.",
+    "Context": "Hybrid Join during Autopilot with unsupported settings.",
+    "Solution": "1. Verify device compatibility in Intune documentation. 2. Check Windows version in 'Settings > System > About'. 3. Ensure Intune Connector is configured for hybrid join. 4. Sync Entra ID with 'Start-ADSyncSyncCycle -PolicyType Delta'. 5. Contact Microsoft support for compatibility issues."
+  },
+  {
+    "ErrorCode": "AutopilotDjpNoConnector",
+    "Message": "Intune Connector not found for domain join during Autopilot.",
+    "Context": "Hybrid Join or ODJ with missing Intune Connector.",
+    "Solution": "1. Install and configure Intune Connector in on-premises AD. 2. Verify Connector status in Intune under Tenant Administration > Connectors and Tokens. 3. Re-upload hardware hash using 'Get-WindowsAutoPilotInfo.ps1'. 4. Ensure connectivity to domain controller. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "AutopilotDjpConnectorError",
+    "Message": "Intune Connector failed during domain join process.",
+    "Context": "Hybrid Join or ODJ during Autopilot with Connector issues.",
+    "Solution": "1. Check Intune Connector logs in on-premises AD server. 2. Restart Connector service in Services.msc. 3. Verify connectivity to domain controller. 4. Re-upload hardware hash using 'Get-WindowsAutoPilotInfo.ps1'. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "AutopilotDeviceNotFound",
+    "Message": "Device not found in Autopilot service during enrollment.",
+    "Context": "Autopilot OOBE with unregistered device.",
+    "Solution": "1. Export hardware hash with 'Get-WindowsAutoPilotInfo.ps1'. 2. Import hash in Intune under Devices > Enroll Devices > Windows Autopilot Devices. 3. Assign Autopilot profile. 4. Verify device in Intune under Devices > Windows Autopilot Devices. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "AutopilotDjpControllerNotFound",
+    "Message": "Domain controller not found during Autopilot domain join.",
+    "Context": "Hybrid Join or ODJ during Autopilot OOBE.",
+    "Solution": "1. Verify connectivity to domain controller with 'ping <domain_controller>'. 2. Check Intune Connector configuration in on-premises AD. 3. Re-upload hardware hash using 'Get-WindowsAutoPilotInfo.ps1'. 4. Ensure domain controller is online. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "AutopilotDjpFailedToCreateComputerObject",
+    "Message": "Failed to create computer object in Active Directory during domain join.",
+    "Context": "Hybrid Join or ODJ during Autopilot.",
+    "Solution": "1. Verify Intune Connector permissions in on-premises AD. 2. Check OU settings in Intune Connector configuration. 3. Re-upload hardware hash using 'Get-WindowsAutoPilotInfo.ps1'. 4. Ensure connectivity to domain controller. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "AutopilotDjpFailedToMoveComputerObject",
+    "Message": "Failed to move computer object to specified OU during domain join.",
+    "Context": "Hybrid Join or ODJ during Autopilot.",
+    "Solution": "1. Verify OU settings in Intune Connector configuration. 2. Check Intune Connector permissions in on-premises AD. 3. Re-upload hardware hash using 'Get-WindowsAutoPilotInfo.ps1'. 4. Ensure connectivity to domain controller. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "AutopilotDjpUnsecureJoin",
+    "Message": "Domain join failed due to unsecure connection or configuration.",
+    "Context": "Hybrid Join or ODJ during Autopilot with security issues.",
+    "Solution": "1. Verify SSL/TLS settings on domain controller. 2. Ensure connectivity to domain controller with 'ping <domain_controller>'. 3. Check Intune Connector configuration in on-premises AD. 4. Re-upload hardware hash using 'Get-WindowsAutoPilotInfo.ps1'. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "AutopilotDjpDomainJoinFailed",
+    "Message": "Domain join failed due to connectivity or configuration issues.",
+    "Context": "Hybrid Join or ODJ during Autopilot OOBE.",
+    "Solution": "1. Verify connectivity to domain controller with 'ping <domain_controller>'. 2. Check ODJ blob in Intune under Devices > Enroll Devices > Windows Autopilot Devices. 3. Re-upload hardware hash using 'Get-WindowsAutoPilotInfo.ps1'. 4. Ensure Intune Connector is active. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "AutopilotDjpOfflineJoinNoBlob",
+    "Message": "Offline Domain Join failed due to missing ODJ blob.",
+    "Context": "Hybrid Join or ODJ during Autopilot without valid blob.",
+    "Solution": "1. Verify ODJ blob in Intune under Devices > Enroll Devices > Windows Autopilot Devices. 2. Re-generate ODJ blob using Intune Connector. 3. Re-upload hardware hash using 'Get-WindowsAutoPilotInfo.ps1'. 4. Ensure connectivity to domain controller. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "AutopilotDjpOfflineJoinInvalidBlob",
+    "Message": "Offline Domain Join failed due to invalid or corrupted ODJ blob.",
+    "Context": "Hybrid Join or ODJ during Autopilot with invalid blob.",
+    "Solution": "1. Re-generate ODJ blob in Intune under Devices > Enroll Devices > Windows Autopilot Devices. 2. Verify Intune Connector status in on-premises AD. 3. Re-upload hardware hash using 'Get-WindowsAutoPilotInfo.ps1'. 4. Ensure connectivity to domain controller. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "Failed to get IMDsmDeviceInterface",
+    "Message": "Failed to access device interface for MDM enrollment.",
+    "Context": "MDM enrollment or device registration with interface issues.",
+    "Solution": "1. Verify Intune Management Extension in 'C:\\Program Files (x86)\\Microsoft Intune Management Extension'. 2. Reinstall extension by triggering sync in 'Settings > Accounts > Work Access > Sync'. 3. Update Windows via Settings > Windows Update. 4. Collect Intune logs with 'mdmdiagnosticstool.exe'. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "MSI Error",
+    "Message": "MSI installation failed during Win32 app deployment.",
+    "Context": "Win32 app installation during ESP or post-enrollment.",
+    "Solution": "1. Verify MSI package in Intune under Apps > All Apps > select app > Properties. 2. Check install command line for errors. 3. Ensure user has local admin rights. 4. Clear Intune cache by deleting 'C:\\ProgramData\\Microsoft\\IntuneManagementExtension'. 5. Retry deployment."
+  },
+  {
+    "ErrorCode": "Failed to connect to the WNS server",
+    "Message": "Failed to connect to Windows Notification Service during enrollment or sync.",
+    "Context": "MDM enrollment or policy sync with WNS issues.",
+    "Solution": "1. Verify connectivity to 'notify.windows.com' with 'ping notify.windows.com'. 2. Allow WNS endpoints in firewall on ports 80/443. 3. Update network drivers in Device Manager. 4. Retry enrollment or sync. 5. Collect network logs with 'netsh trace start scenario=InternetClient'."
+  },
+  {
+    "ErrorCode": "Failed to retrieve Autopilot profile",
+    "Message": "Failed to retrieve Autopilot profile due to network or configuration issues.",
+    "Context": "Autopilot OOBE during profile download.",
+    "Solution": "1. Verify connectivity to 'ztd.dds.microsoft.com'. 2. Check profile assignment in Intune under Devices > Enroll Devices > Autopilot Profiles. 3. Re-upload hardware hash using 'Get-WindowsAutoPilotInfo.ps1'. 4. Check Autopilot diagnostics with 'mdmdiagnosticstool.exe /area Autopilot'. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "AutoPilotManager reported failure",
+    "Message": "Autopilot Manager reported a generic failure during enrollment.",
+    "Context": "Autopilot OOBE with unspecified issues.",
+    "Solution": "1. Check Autopilot diagnostics with 'mdmdiagnosticstool.exe /area Autopilot'. 2. Verify profile assignment in Intune under Devices > Enroll Devices > Autopilot Profiles. 3. Re-upload hardware hash using 'Get-WindowsAutoPilotInfo.ps1'. 4. Ensure connectivity to 'ztd.dds.microsoft.com'. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "DmanoEnrollmentManager::Discover failed",
+    "Message": "MDM discovery failed during enrollment due to misconfigured settings.",
+    "Context": "Manual MDM enrollment with incorrect MDM URLs.",
+    "Solution": "1. Verify MDM discovery URL in Entra ID under Mobility > Microsoft Intune. 2. Set MDM authority to Intune in Intune admin center under Tenant Administration > MDM Authority. 3. Sync Entra ID with 'Start-ADSyncSyncCycle -PolicyType Delta'. 4. Reattempt enrollment. 5. Check tenant settings in Intune."
+  },
+  {
+    "ErrorCode": "Failed to acquire AAD token for Intune",
+    "Message": "Failed to acquire Azure AD token for Intune enrollment.",
+    "Context": "User authentication during enrollment or Company Portal sign-in.",
+    "Solution": "1. Verify user credentials in Microsoft 365 portal. 2. Reset password in Microsoft 365 admin center. 3. Assign Intune license in Microsoft 365 admin center under Users > Active Users > Licenses. 4. Sync Entra ID with 'Start-ADSyncSyncCycle -PolicyType Delta'. 5. Reattempt sign-in."
+  },
+  {
+    "ErrorCode": "SidecarClient::ExecuteSync failed",
+    "Message": "Sidecar client failed to execute sync with Intune.",
+    "Context": "Policy or app sync during MDM management.",
+    "Solution": "1. Verify Intune Management Extension in 'C:\\Program Files (x86)\\Microsoft Intune Management Extension'. 2. Trigger sync in 'Settings > Accounts > Work Access > Sync'. 3. Check connectivity to 'manage.microsoft.com'. 4. Collect Intune logs with 'mdmdiagnosticstool.exe'. 5. Retry sync."
+  },
+  {
+    "ErrorCode": "Failed to execute Intune Management Extension",
+    "Message": "Intune Management Extension failed to execute during app or policy deployment.",
+    "Context": "Win32 app or policy application post-enrollment.",
+    "Solution": "1. Verify Intune Management Extension in 'C:\\Program Files (x86)\\Microsoft Intune Management Extension'. 2. Reinstall extension by triggering sync in 'Settings > Accounts > Work Access > Sync'. 3. Check event logs in Event Viewer under Windows Logs > Application. 4. Update Windows via Settings > Windows Update. 5. Collect Intune logs with 'mdmdiagnosticstool.exe'."
+  },
+  {
+    "ErrorCode": "Exit code 1603",
+    "Message": "Installation failed with exit code 1603 due to generic installer error.",
+    "Context": "Win32 or MSI app installation during ESP or post-enrollment.",
+    "Solution": "1. Verify app package in Intune under Apps > All Apps > select app > Properties. 2. Check install command line for errors. 3. Ensure user has local admin rights. 4. Clear Intune cache by deleting 'C:\\ProgramData\\Microsoft\\IntuneManagementExtension'. 5. Retry deployment."
+  },
+  {
+    "ErrorCode": "Exit code 1618",
+    "Message": "Installation failed with exit code 1618 due to another installation in progress.",
+    "Context": "Win32 app installation during ESP or concurrent installations.",
+    "Solution": "1. Check for pending installations in Task Manager under Processes. 2. Reboot device to clear pending installations. 3. Verify no pending reboots in 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\PendingFileRenameOperations'. 4. Redeploy app in Intune under Apps > All Apps. 5. Monitor installation status in Intune logs."
+  },
+  {
+    "ErrorCode": "Win32 app processing",
+    "Message": "Win32 app processing failed due to incorrect configuration or dependencies.",
+    "Context": "Win32 app deployment during ESP or post-enrollment.",
+    "Solution": "1. Verify app configuration in Intune under Apps > All Apps > select app > Properties. 2. Check detection rules for correct file or registry key. 3. Ensure dependencies are deployed in Intune. 4. Clear Intune cache by deleting 'C:\\ProgramData\\Microsoft\\IntuneManagementExtension'. 5. Retry deployment."
+  },
+  {
+    "ErrorCode": "LOB app install error",
+    "Message": "Line-of-Business app installation failed due to corrupt package or configuration.",
+    "Context": "LOB app deployment during ESP or post-enrollment.",
+    "Solution": "1. Verify app package in Intune under Apps > All Apps > select app > Properties. 2. Re-upload app package in Intune. 3. Check detection rules for correct file or registry key. 4. Clear Intune cache by deleting 'C:\\ProgramData\\Microsoft\\IntuneManagementExtension'. 5. Retry deployment."
+  },
+  {
+    "ErrorCode": "Failed to delete previous version during ESP",
+    "Message": "Failed to delete previous app version during ESP, causing installation failure.",
+    "Context": "Win32 or LOB app deployment during Autopilot ESP.",
+    "Solution": "1. Uninstall previous app version manually using 'appwiz.cpl'. 2. Verify detection rules in Intune under Apps > All Apps > select app > Properties. 3. Clear Intune cache by deleting 'C:\\ProgramData\\Microsoft\\IntuneManagementExtension'. 4. Redeploy app in Intune. 5. Check ESP logs with 'mdmdiagnosticstool.exe'."
+  },
+  {
+    "ErrorCode": "ProfileState: Error",
+    "Message": "Autopilot profile application failed due to invalid or corrupted profile.",
+    "Context": "Autopilot OOBE during profile application.",
+    "Solution": "1. Verify profile in Intune under Devices > Enroll Devices > Autopilot Profiles. 2. Reassign profile to device group. 3. Re-upload hardware hash using 'Get-WindowsAutoPilotInfo.ps1'. 4. Check Autopilot diagnostics with 'mdmdiagnosticstool.exe /area Autopilot'. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "OOBE_SETTINGS_AUTOPILOT_PROFILE_NOT_FOUND",
+    "Message": "Autopilot profile not found during OOBE setup.",
+    "Context": "Autopilot OOBE with missing profile assignment.",
+    "Solution": "1. Verify profile assignment in Intune under Devices > Enroll Devices > Autopilot Profiles. 2. Re-upload hardware hash using 'Get-WindowsAutoPilotInfo.ps1'. 3. Assign profile to device group. 4. Check Autopilot diagnostics with 'mdmdiagnosticstool.exe /area Autopilot'. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "GetAutopilotConfigurationFile failed",
+    "Message": "Failed to retrieve Autopilot configuration file due to network or service issues.",
+    "Context": "Autopilot OOBE during profile download.",
+    "Solution": "1. Verify connectivity to 'ztd.dds.microsoft.com'. 2. Check Intune service health in Microsoft 365 admin center under Health > Service Health. 3. Re-upload hardware hash in Intune. 4. Check Autopilot diagnostics with 'mdmdiagnosticstool.exe /area Autopilot'. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "DownloadAutopilotFile",
+    "Message": "Failed to download Autopilot configuration file due to network issues.",
+    "Context": "Autopilot OOBE during profile retrieval.",
+    "Solution": "1. Verify connectivity to 'ztd.dds.microsoft.com'. 2. Check network stability in 'Settings > Network & Internet'. 3. Flush DNS cache with 'ipconfig /flushdns'. 4. Retry enrollment. 5. Collect Autopilot diagnostics with 'mdmdiagnosticstool.exe /area Autopilot'."
+  },
+  {
+    "ErrorCode": "Unable to retrieve Autopilot settings",
+    "Message": "Unable to retrieve Autopilot settings due to service or configuration issues.",
+    "Context": "Autopilot OOBE during profile application.",
+    "Solution": "1. Check Intune service health in Microsoft 365 admin center under Health > Service Health. 2. Verify profile assignment in Intune under Devices > Enroll Devices > Autopilot Profiles. 3. Re-upload hardware hash using 'Get-WindowsAutoPilotInfo.ps1'. 4. Check Autopilot diagnostics with 'mdmdiagnosticstool.exe /area Autopilot'. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "Check network connectivity",
+    "Message": "Enrollment or sync failed due to network connectivity issues.",
+    "Context": "Autopilot or MDM enrollment with network problems.",
+    "Solution": "1. Verify connectivity with 'ping manage.microsoft.com'. 2. Update network drivers in Device Manager. 3. Check proxy settings in 'Settings > Network & Internet > Proxy'. 4. Flush DNS cache with 'ipconfig /flushdns'. 5. Collect network logs with 'netsh trace start scenario=InternetClient'."
+  },
+  {
+    "ErrorCode": "Failed to read Autopilot profile",
+    "Message": "Failed to read Autopilot profile due to corrupted or invalid profile data.",
+    "Context": "Autopilot OOBE during profile application.",
+    "Solution": "1. Verify profile in Intune under Devices > Enroll Devices > Autopilot Profiles. 2. Reassign profile to device group. 3. Re-upload hardware hash using 'Get-WindowsAutoPilotInfo.ps1'. 4. Check Autopilot diagnostics with 'mdmdiagnosticstool.exe /area Autopilot'. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "ConvertAutopilotConfiguration failed",
+    "Message": "Failed to convert Autopilot configuration during profile application.",
+    "Context": "Autopilot OOBE with profile processing issues.",
+    "Solution": "1. Verify profile settings in Intune under Devices > Enroll Devices > Autopilot Profiles. 2. Re-upload hardware hash using 'Get-WindowsAutoPilotInfo.ps1'. 3. Check Autopilot diagnostics with 'mdmdiagnosticstool.exe /area Autopilot'. 4. Reassign profile to device group. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "Failed to apply Autopilot profile",
+    "Message": "Failed to apply Autopilot profile due to configuration or network issues.",
+    "Context": "Autopilot OOBE during profile application.",
+    "Solution": "1. Verify profile assignment in Intune under Devices > Enroll Devices > Autopilot Profiles. 2. Re-upload hardware hash using 'Get-WindowsAutoPilotInfo.ps1'. 3. Check connectivity to 'ztd.dds.microsoft.com'. 4. Check Autopilot diagnostics with 'mdmdiagnosticstool.exe /area Autopilot'. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "Unable to connect to the MDM enrollment service",
+    "Message": "Unable to connect to MDM enrollment service due to network or service issues.",
+    "Context": "MDM enrollment during Autopilot or manual setup.",
+    "Solution": "1. Verify connectivity to 'manage.microsoft.com'. 2. Check Intune service health in Microsoft 365 admin center under Health > Service Health. 3. Allow Intune endpoints in firewall on ports 80/443. 4. Retry enrollment. 5. Collect MDM logs with 'mdmdiagnosticstool.exe'."
+  },
+  {
+    "ErrorCode": "Device health attestation failed",
+    "Message": "Device health attestation failed due to TPM or certificate issues.",
+    "Context": "Autopilot self-deploying mode requiring TPM attestation.",
+    "Solution": "1. Verify TPM 2.0 in 'tpm.msc'. 2. Update TPM firmware if outdated. 3. Ensure connectivity to Microsoft attestation servers. 4. Remove invalid certificates in 'certlm.msc' under Personal > Certificates. 5. Collect MDM logs with 'mdmdiagnosticstool.exe'."
+  },
+  {
+    "ErrorCode": "TPM is not available or not ready",
+    "Message": "TPM is not available or not initialized, preventing device attestation.",
+    "Context": "Autopilot self-deploying mode with TPM issues.",
+    "Solution": "1. Verify TPM 2.0 in 'tpm.msc'. 2. Initialize TPM if not ready using 'tpm.msc > Prepare the TPM'. 3. Update TPM firmware if outdated. 4. Ensure connectivity to Microsoft attestation servers. 5. Collect MDM logs with 'mdmdiagnosticstool.exe'."
+  },
+  {
+    "ErrorCode": "The device is not compliant with the BitLocker policy",
+    "Message": "Device failed to meet BitLocker compliance policy during enrollment.",
+    "Context": "Enrollment or access with non-compliant BitLocker settings.",
+    "Solution": "1. Check BitLocker policy in Intune under Devices > Compliance Policies. 2. Enable BitLocker in 'Settings > System > Storage > BitLocker settings'. 3. Trigger compliance check in 'Settings > Accounts > Work Access > Sync'. 4. Adjust policy if overly restrictive. 5. Review compliance status in Intune."
+  },
+  {
+    "ErrorCode": "BitLocker encryption failed during ESP",
+    "Message": "BitLocker encryption failed during Enrollment Status Page.",
+    "Context": "Autopilot ESP with BitLocker configuration issues.",
+    "Solution": "1. Verify BitLocker policy in Intune under Devices > Compliance Policies. 2. Ensure TPM 2.0 is enabled in 'tpm.msc'. 3. Manually enable BitLocker in 'Settings > System > Storage > BitLocker settings'. 4. Check ESP logs with 'mdmdiagnosticstool.exe'. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "Waiting for ODJ connector",
+    "Message": "Autopilot enrollment stalled while waiting for Offline Domain Join connector.",
+    "Context": "Hybrid Join or ODJ during Autopilot OOBE.",
+    "Solution": "1. Verify Intune Connector status in on-premises AD. 2. Check ODJ blob in Intune under Devices > Enroll Devices > Windows Autopilot Devices. 3. Re-upload hardware hash using 'Get-WindowsAutoPilotInfo.ps1'. 4. Ensure connectivity to domain controller. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "ODJ connector timeout",
+    "Message": "Offline Domain Join connector timed out during Autopilot.",
+    "Context": "Hybrid Join or ODJ during Autopilot OOBE.",
+    "Solution": "1. Verify Intune Connector status in on-premises AD. 2. Restart Connector service in Services.msc. 3. Check connectivity to domain controller with 'ping <domain_controller>'. 4. Re-upload hardware hash using 'Get-WindowsAutoPilotInfo.ps1'. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "Offline domain join failed",
+    "Message": "Offline Domain Join failed due to invalid ODJ blob or connectivity issues.",
+    "Context": "Hybrid Join or ODJ during Autopilot.",
+    "Solution": "1. Verify ODJ blob in Intune under Devices > Enroll Devices > Windows Autopilot Devices. 2. Re-generate ODJ blob using Intune Connector. 3. Ensure connectivity to domain controller. 4. Re-upload hardware hash using 'Get-WindowsAutoPilotInfo.ps1'. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "Failed to apply domain join blob",
+    "Message": "Failed to apply ODJ blob during domain join process.",
+    "Context": "Hybrid Join or ODJ during Autopilot OOBE.",
+    "Solution": "1. Verify ODJ blob in Intune under Devices > Enroll Devices > Windows Autopilot Devices. 2. Re-generate ODJ blob using Intune Connector. 3. Ensure connectivity to domain controller. 4. Re-upload hardware hash using 'Get-WindowsAutoPilotInfo.ps1'. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "Failed to assign profile",
+    "Message": "Failed to assign Autopilot profile to the device.",
+    "Context": "Autopilot enrollment with missing or incorrect profile assignment.",
+    "Solution": "1. Verify profile in Intune under Devices > Enroll Devices > Autopilot Profiles. 2. Assign profile to device group. 3. Re-upload hardware hash using 'Get-WindowsAutoPilotInfo.ps1'. 4. Check Autopilot diagnostics with 'mdmdiagnosticstool.exe /area Autopilot'. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "Failed to sync with Intune",
+    "Message": "Device failed to sync with Intune due to network or configuration issues.",
+    "Context": "Policy or app sync during MDM management.",
+    "Solution": "1. Verify connectivity to 'manage.microsoft.com'. 2. Trigger sync in 'Settings > Accounts > Work Access > Sync'. 3. Check Intune service health in Microsoft 365 admin center under Health > Service Health. 4. Collect Intune logs with 'mdmdiagnosticstool.exe'. 5. Retry sync."
+  },
+  {
+    "ErrorCode": "Error",
+    "Message": "Generic error occurred during enrollment or app deployment.",
+    "Context": "Autopilot, MDM enrollment, or app installation with unspecified issues.",
+    "Solution": "1. Check event logs in Event Viewer under Windows Logs > Application and System. 2. Collect MDM logs with 'mdmdiagnosticstool.exe'. 3. Verify connectivity to 'manage.microsoft.com'. 4. Update Windows via Settings > Windows Update. 5. Retry operation."
+  },
+  {
+    "ErrorCode": "Failed",
+    "Message": "Operation failed during enrollment or app deployment.",
+    "Context": "Autopilot, MDM enrollment, or app installation with unspecified failure.",
+    "Solution": "1. Check event logs in Event Viewer under Windows Logs > Application and System. 2. Collect MDM logs with 'mdmdiagnosticstool.exe'. 3. Verify connectivity to Intune endpoints. 4. Update Windows via Settings > Windows Update. 5. Retry operation."
+  },
+  {
+    "ErrorCode": "Failure",
+    "Message": "General failure during enrollment, sync, or app deployment.",
+    "Context": "Autopilot, MDM enrollment, or app installation with unspecified issues.",
+    "Solution": "1. Check event logs in Event Viewer under Windows Logs > Application and System. 2. Collect MDM logs with 'mdmdiagnosticstool.exe'. 3. Verify Intune service health in Microsoft 365 admin center under Health > Service Health. 4. Retry operation. 5. Contact Microsoft support if persistent."
+  },
+  {
+    "ErrorCode": "Exception",
+    "Message": "Unexpected exception occurred during enrollment or app deployment.",
+    "Context": "Autopilot, MDM enrollment, or app installation with software issues.",
+    "Solution": "1. Check event logs in Event Viewer under Windows Logs > Application and System. 2. Collect MDM logs with 'mdmdiagnosticstool.exe'. 3. Update Windows via Settings > Windows Update. 4. Clear Intune cache by deleting 'C:\\ProgramData\\Microsoft\\IntuneManagementExtension'. 5. Retry operation."
+  },
+  {
+    "ErrorCode": "Warning",
+    "Message": "Non-critical issue occurred during enrollment or app deployment.",
+    "Context": "Autopilot, MDM enrollment, or app installation with minor issues.",
+    "Solution": "1. Check event logs in Event Viewer under Windows Logs > Application and System. 2. Collect MDM logs with 'mdmdiagnosticstool.exe'. 3. Verify configuration in Intune under Devices or Apps. 4. Retry operation. 5. Monitor for recurrence."
+  },
+  {
+    "ErrorCode": "Critical",
+    "Message": "Critical error occurred, halting enrollment or app deployment.",
+    "Context": "Autopilot, MDM enrollment, or app installation with severe issues.",
+    "Solution": "1. Collect MDM logs with 'mdmdiagnosticstool.exe'. 2. Check event logs in Event Viewer under Windows Logs > Application and System. 3. Reset device via 'Reset this PC' if necessary. 4. Reattempt operation. 5. Contact Microsoft support if persistent."
+  },
+  {
+    "ErrorCode": "Fatal",
+    "Message": "Fatal error occurred, preventing enrollment or app deployment.",
+    "Context": "Autopilot, MDM enrollment, or app installation with critical failure.",
+    "Solution": "1. Collect MDM logs with 'mdmdiagnosticstool.exe'. 2. Check event logs in Event Viewer under Windows Logs > Application and System. 3. Reset device via 'Reset this PC'. 4. Reattempt operation. 5. Contact Microsoft support for assistance."
+  },
+  {
+    "ErrorCode": "Denied",
+    "Message": "Access denied during enrollment or app deployment due to permissions.",
+    "Context": "MDM enrollment or app installation with insufficient user rights.",
+    "Solution": "1. Ensure user has local admin rights during enrollment. 2. Verify Intune permissions in Intune admin center under Users > All Users > select user > Roles. 3. Run enrollment as admin via elevated Company Portal. 4. Check UAC settings in 'Control Panel > User Accounts > Change User Account Control settings'. 5. Retry operation."
+  },
+  {
+    "ErrorCode": "Not found",
+    "Message": "Resource not found during enrollment or app deployment.",
+    "Context": "Autopilot profile, device record, or app package missing.",
+    "Solution": "1. Verify resource in Intune under Devices > All Devices or Apps > All Apps. 2. Re-upload hardware hash using 'Get-WindowsAutoPilotInfo.ps1' for devices. 3. Re-upload app package in Intune. 4. Check Autopilot diagnostics with 'mdmdiagnosticstool.exe /area Autopilot'. 5. Retry operation."
+  },
+  {
+    "ErrorCode": "Unable",
+    "Message": "Unable to complete operation due to unspecified issues.",
+    "Context": "Autopilot, MDM enrollment, or app installation with generic failure.",
+    "Solution": "1. Check event logs in Event Viewer under Windows Logs > Application and System. 2. Collect MDM logs with 'mdmdiagnosticstool.exe'. 3. Verify connectivity to Intune endpoints. 4. Update Windows via Settings > Windows Update. 5. Retry operation."
+  },
+  {
+    "ErrorCode": "Can't",
+    "Message": "Operation cannot be completed due to configuration or resource issues.",
+    "Context": "Autopilot, MDM enrollment, or app installation with unspecified issues.",
+    "Solution": "1. Verify configuration in Intune under Devices or Apps. 2. Collect MDM logs with 'mdmdiagnosticstool.exe'. 3. Check event logs in Event Viewer under Windows Logs > Application and System. 4. Update Windows via Settings > Windows Update. 5. Retry operation."
+  },
+  {
+    "ErrorCode": "Cannot",
+    "Message": "Operation cannot proceed due to system or configuration errors.",
+    "Context": "Autopilot, MDM enrollment, or app installation with generic failure.",
+    "Solution": "1. Check event logs in Event Viewer under Windows Logs > Application and System. 2. Collect MDM logs with 'mdmdiagnosticstool.exe'. 3. Verify Intune configuration in admin center. 4. Update Windows via Settings > Windows Update. 5. Retry operation."
+  },
+  {
+    "ErrorCode": "Crash",
+    "Message": "System or application crashed during enrollment or app deployment.",
+    "Context": "Autopilot, MDM enrollment, or app installation with system failure.",
+    "Solution": "1. Check event logs in Event Viewer under Windows Logs > Application and System. 2. Collect MDM logs with 'mdmdiagnosticstool.exe'. 3. Update Windows via Settings > Windows Update. 4. Reset device via 'Reset this PC' if necessary. 5. Retry operation."
+  },
+  {
+    "ErrorCode": "Aborted",
+    "Message": "Operation was aborted during enrollment or app deployment.",
+    "Context": "Autopilot ESP or app installation interrupted by user or system.",
+    "Solution": "1. Ensure user does not interrupt ESP during enrollment. 2. Disable ESP timeouts in Intune under Devices > Enroll Devices > Windows Autopilot Profiles. 3. Verify app install command in Intune under Apps > All Apps > Properties. 4. Check event logs in Event Viewer under Windows Logs > Application. 5. Retry operation."
+  },
+  {
+    "ErrorCode": "Rejected",
+    "Message": "Operation rejected due to policy or configuration issues.",
+    "Context": "Autopilot, MDM enrollment, or app deployment with restrictive settings.",
+    "Solution": "1. Check compliance policies in Intune under Devices > Compliance Policies. 2. Verify enrollment restrictions in Intune under Devices > Enroll Devices > Enrollment Restrictions. 3. Adjust policies if overly restrictive. 4. Collect MDM logs with 'mdmdiagnosticstool.exe'. 5. Retry operation."
+  },
+  {
+    "ErrorCode": "Unsuccessful",
+    "Message": "Operation completed unsuccessfully due to unspecified issues.",
+    "Context": "Autopilot, MDM enrollment, or app installation with generic failure.",
+    "Solution": "1. Check event logs in Event Viewer under Windows Logs > Application and System. 2. Collect MDM logs with 'mdmdiagnosticstool.exe'. 3. Verify Intune configuration in admin center. 4. Update Windows via Settings > Windows Update. 5. Retry operation."
+  },
+  {
+    "ErrorCode": "Installation error",
+    "Message": "Installation failed during app deployment due to configuration or package issues.",
+    "Context": "Win32 or LOB app deployment during ESP or post-enrollment.",
+    "Solution": "1. Verify app package in Intune under Apps > All Apps > select app > Properties. 2. Check detection rules for correct file or registry key. 3. Clear Intune cache by deleting 'C:\\ProgramData\\Microsoft\\IntuneManagementExtension'. 4. Re-upload app package in Intune. 5. Retry deployment."
+  },
+  {
+    "ErrorCode": "Enrollment failed",
+    "Message": "Enrollment failed due to generic configuration or network issues.",
+    "Context": "Autopilot or MDM enrollment with unspecified issues.",
+    "Solution": "1. Verify connectivity to 'manage.microsoft.com'. 2. Check Intune service health in Microsoft 365 admin center under Health > Service Health. 3. Remove management profile in 'Settings > Accounts > Work Access'. 4. Collect MDM logs with 'mdmdiagnosticstool.exe'. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "Authentication failed",
+    "Message": "Authentication failed during enrollment or sign-in.",
+    "Context": "User-driven enrollment or Company Portal sign-in.",
+    "Solution": "1. Verify user credentials in Microsoft 365 portal. 2. Reset password in Microsoft 365 admin center. 3. Assign Intune license in Microsoft 365 admin center under Users > Active Users > Licenses. 4. Sync Entra ID with 'Start-ADSyncSyncCycle -PolicyType Delta'. 5. Reattempt sign-in."
+  },
+  {
+    "ErrorCode": "Access denied",
+    "Message": "Access denied during enrollment or app deployment due to insufficient permissions.",
+    "Context": "MDM enrollment or app installation with restricted user rights.",
+    "Solution": "1. Ensure user has local admin rights during enrollment. 2. Verify Intune permissions in Intune admin center under Users > All Users > select user > Roles. 3. Run enrollment as admin via elevated Company Portal. 4. Check UAC settings in 'Control Panel > User Accounts > Change User Account Control settings'. 5. Retry operation."
+  },
+  {
+    "ErrorCode": "Connection failed",
+    "Message": "Connection to Intune or Autopilot service failed due to network issues.",
+    "Context": "Enrollment or sync with network connectivity problems.",
+    "Solution": "1. Verify connectivity with 'ping manage.microsoft.com'. 2. Update network drivers in Device Manager. 3. Check proxy settings in 'Settings > Network & Internet > Proxy'. 4. Allow Intune endpoints in firewall. 5. Collect network logs with 'netsh trace start scenario=InternetClient'."
+  },
+  {
+    "ErrorCode": "Sync error",
+    "Message": "Device sync with Intune failed due to network or configuration issues.",
+    "Context": "Policy or app sync during MDM management.",
+    "Solution": "1. Verify connectivity to 'manage.microsoft.com'. 2. Trigger sync in 'Settings > Accounts > Work Access > Sync'. 3. Check Intune service health in Microsoft 365 admin center under Health > Service Health. 4. Collect Intune logs with 'mdmdiagnosticstool.exe'. 5. Retry sync."
+  },
+  {
+    "ErrorCode": "Policy failure",
+    "Message": "Policy application failed due to conflicts or misconfiguration.",
+    "Context": "Policy deployment during MDM management or ESP.",
+    "Solution": "1. Check conflicting policies in Intune under Devices > Configuration Profiles. 2. Remove or adjust conflicting policies. 3. Trigger sync in 'Settings > Accounts > Work Access > Sync'. 4. Collect Intune logs with 'mdmdiagnosticstool.exe'. 5. Retry policy application."
+  },
+  {
+    "ErrorCode": "Not installed",
+    "Message": "Application not installed due to deployment failure.",
+    "Context": "Win32 or LOB app deployment during ESP or post-enrollment.",
+    "Solution": "1. Verify app package in Intune under Apps > All Apps > select app > Properties. 2. Check detection rules for correct file or registry key. 3. Clear Intune cache by deleting 'C:\\ProgramData\\Microsoft\\IntuneManagementExtension'. 4. Re-deploy app. 5. Check installation status with 'Get-AppxPackage'."
+  },
+  {
+    "ErrorCode": "Install failed",
+    "Message": "Application installation failed due to package or configuration issues.",
+    "Context": "Win32 or LOB app deployment during ESP or post-enrollment.",
+    "Solution": "1. Verify app package in Intune under Apps > All Apps > select app > Properties. 2. Re-upload app package in Intune. 3. Check detection rules for correct file or registry key. 4. Clear Intune cache by deleting 'C:\\ProgramData\\Microsoft\\IntuneManagementExtension'. 5. Retry deployment."
+  },
+  {
+    "ErrorCode": "Rollback",
+    "Message": "Installation rolled back due to errors during app deployment.",
+    "Context": "Win32 or LOB app deployment with installation failure.",
+    "Solution": "1. Check event logs in Event Viewer under Windows Logs > Application. 2. Verify app package in Intune under Apps > All Apps > select app > Properties. 3. Ensure user has local admin rights. 4. Clear Intune cache by deleting 'C:\\ProgramData\\Microsoft\\IntuneManagementExtension'. 5. Retry deployment."
+  },
+  {
+    "ErrorCode": "Exit code",
+    "Message": "Installation failed with a specific exit code during app deployment.",
+    "Context": "Win32 or MSI app installation during ESP or post-enrollment.",
+    "Solution": "1. Check event logs in Event Viewer under Windows Logs > Application for specific exit code. 2. Verify app package in Intune under Apps > All Apps > select app > Properties. 3. Ensure correct install command line. 4. Clear Intune cache by deleting 'C:\\ProgramData\\Microsoft\\IntuneManagementExtension'. 5. Retry deployment."
+  },
+  {
+    "ErrorCode": "Status code",
+    "Message": "Operation failed with a specific status code during enrollment or sync.",
+    "Context": "Autopilot, MDM enrollment, or policy sync with server response issues.",
+    "Solution": "1. Check event logs in Event Viewer under Windows Logs > Application and System. 2. Collect MDM logs with 'mdmdiagnosticstool.exe'. 3. Verify connectivity to Intune endpoints. 4. Check Intune service health in Microsoft 365 admin center under Health > Service Health. 5. Retry operation."
+  },
+  {
+    "ErrorCode": "Result code",
+    "Message": "Operation failed with a specific result code during enrollment or sync.",
+    "Context": "Autopilot, MDM enrollment, or policy sync with server issues.",
+    "Solution": "1. Check event logs in Event Viewer under Windows Logs > Application and System. 2. Collect MDM logs with 'mdmdiagnosticstool.exe'. 3. Verify Intune configuration in admin center. 4. Check Intune service health in Microsoft 365 admin center under Health > Service Health. 5. Retry operation."
+  },
+  {
+    "ErrorCode": "HRESULT",
+    "Message": "Operation failed with an HRESULT error code during enrollment or app deployment.",
+    "Context": "Autopilot, MDM enrollment, or app installation with system errors.",
+    "Solution": "1. Check event logs in Event Viewer under Windows Logs > Application and System for HRESULT code. 2. Collect MDM logs with 'mdmdiagnosticstool.exe'. 3. Update Windows via Settings > Windows Update. 4. Clear Intune cache by deleting 'C:\\ProgramData\\Microsoft\\IntuneManagementExtension'. 5. Retry operation."
+  },
+  {
+    "ErrorCode": "Win32error",
+    "Message": "Win32 error occurred during enrollment or app deployment.",
+    "Context": "Autopilot, MDM enrollment, or app installation with system errors.",
+    "Solution": "1. Check event logs in Event Viewer under Windows Logs > Application and System for Win32 error code. 2. Collect MDM logs with 'mdmdiagnosticstool.exe'. 3. Update Windows via Settings > Windows Update. 4. Clear Intune cache by deleting 'C:\\ProgramData\\Microsoft\\IntuneManagementExtension'. 5. Retry operation."
+  },
+  {
+    "ErrorCode": "Autopilot error",
+    "Message": "Generic Autopilot error occurred during enrollment.",
+    "Context": "Autopilot OOBE with unspecified issues.",
+    "Solution": "1. Check Autopilot diagnostics with 'mdmdiagnosticstool.exe /area Autopilot'. 2. Verify profile assignment in Intune under Devices > Enroll Devices > Autopilot Profiles. 3. Re-upload hardware hash using 'Get-WindowsAutoPilotInfo.ps1'. 4. Ensure connectivity to 'ztd.dds.microsoft.com'. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "Intune error",
+    "Message": "Generic Intune error occurred during enrollment or sync.",
+    "Context": "MDM enrollment or policy sync with unspecified issues.",
+    "Solution": "1. Check Intune service health in Microsoft 365 admin center under Health > Service Health. 2. Collect MDM logs with 'mdmdiagnosticstool.exe'. 3. Verify connectivity to 'manage.microsoft.com'. 4. Update Windows via Settings > Windows Update. 5. Retry operation."
+  },
+  {
+    "ErrorCode": "MDM failure",
+    "Message": "MDM enrollment or sync failed due to configuration or network issues.",
+    "Context": "MDM enrollment or policy sync with unspecified issues.",
+    "Solution": "1. Verify MDM settings in Entra ID under Mobility > Microsoft Intune. 2. Check connectivity to 'manage.microsoft.com'. 3. Remove management profile in 'Settings > Accounts > Work Access'. 4. Collect MDM logs with 'mdmdiagnosticstool.exe'. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "Compliance error",
+    "Message": "Device failed to meet compliance requirements during enrollment or access.",
+    "Context": "Enrollment or access with non-compliant device.",
+    "Solution": "1. Check compliance policies in Intune under Devices > Compliance Policies. 2. Ensure device meets requirements (e.g., BitLocker, updates). 3. Trigger compliance check in 'Settings > Accounts > Work Access > Sync'. 4. Adjust policies if restrictive. 5. Review compliance status in Intune."
+  },
+  {
+    "ErrorCode": "Configuration failed",
+    "Message": "Configuration profile application failed due to conflicts or errors.",
+    "Context": "Policy deployment during MDM management or ESP.",
+    "Solution": "1. Check conflicting policies in Intune under Devices > Configuration Profiles. 2. Remove or adjust conflicting policies. 3. Trigger sync in 'Settings > Accounts > Work Access > Sync'. 4. Collect Intune logs with 'mdmdiagnosticstool.exe'. 5. Retry policy application."
+  },
+  {
+    "ErrorCode": "Timed out",
+    "Message": "Operation timed out during enrollment or app deployment.",
+    "Context": "Autopilot ESP or app installation with timeout issues.",
+    "Solution": "1. Increase ESP timeout in Intune under Devices > Enroll Devices > Windows Autopilot Profiles. 2. Verify app install command in Intune under Apps > All Apps > Properties. 3. Check device performance in Task Manager. 4. Re-deploy app post-ESP. 5. Collect Intune logs with 'mdmdiagnosticstool.exe'."
+  },
+  {
+    "ErrorCode": "Expired",
+    "Message": "Operation failed due to expired certificate or token.",
+    "Context": "Enrollment or authentication with expired credentials.",
+    "Solution": "1. Check certificates in 'certlm.msc' under Personal > Certificates. 2. Remove expired certificates issued by 'Sc_Online_Issuing'. 3. Ensure internet connectivity to Microsoft certificate servers. 4. Update Windows via Settings > Windows Update. 5. Collect MDM logs with 'mdmdiagnosticstool.exe'."
+  },
+  {
+    "ErrorCode": "Not responding",
+    "Message": "Service or device not responding during enrollment or sync.",
+    "Context": "Autopilot, MDM enrollment, or policy sync with connectivity issues.",
+    "Solution": "1. Check Intune service health in Microsoft 365 admin center under Health > Service Health. 2. Verify connectivity to 'manage.microsoft.com'. 3. Update network drivers in Device Manager. 4. Collect MDM logs with 'mdmdiagnosticstool.exe'. 5. Retry operation."
+  },
+  {
+    "ErrorCode": "Not reachable",
+    "Message": "Intune or Autopilot service not reachable due to network issues.",
+    "Context": "Enrollment or sync with network connectivity problems.",
+    "Solution": "1. Verify connectivity with 'ping manage.microsoft.com'. 2. Update network drivers in Device Manager. 3. Check proxy settings in 'Settings > Network & Internet > Proxy'. 4. Allow Intune endpoints in firewall. 5. Collect network logs with 'netsh trace start scenario=InternetClient'."
+  },
+  {
+    "ErrorCode": "Not available",
+    "Message": "Resource or service not available during enrollment or sync.",
+    "Context": "Autopilot, MDM enrollment, or policy sync with service issues.",
+    "Solution": "1. Check Intune service health in Microsoft 365 admin center under Health > Service Health. 2. Verify connectivity to 'manage.microsoft.com'. 3. Collect MDM logs with 'mdmdiagnosticstool.exe'. 4. Retry operation. 5. Contact Microsoft support if persistent."
+  },
+  {
+    "ErrorCode": "Not registered",
+    "Message": "Device not registered with Autopilot or Intune service.",
+    "Context": "Autopilot enrollment with missing device registration.",
+    "Solution": "1. Export hardware hash with 'Get-WindowsAutoPilotInfo.ps1'. 2. Import hash in Intune under Devices > Enroll Devices > Windows Autopilot Devices. 3. Assign Autopilot profile. 4. Verify device in Intune under Devices > Windows Autopilot Devices. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "Not compliant",
+    "Message": "Device not compliant with Intune policies during enrollment or access.",
+    "Context": "Enrollment or access with non-compliant device.",
+    "Solution": "1. Check compliance policies in Intune under Devices > Compliance Policies. 2. Ensure device meets requirements (e.g., BitLocker, updates). 3. Trigger compliance check in 'Settings > Accounts > Work Access > Sync'. 4. Adjust policies if restrictive. 5. Review compliance status in Intune."
+  },
+  {
+    "ErrorCode": "Not detected",
+    "Message": "Application or resource not detected after deployment.",
+    "Context": "Win32 or LOB app deployment with incorrect detection rules.",
+    "Solution": "1. Verify detection rules in Intune under Apps > All Apps > select app > Properties. 2. Check 'HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\Autopilot\\EnrollmentStatusTracking' for app status. 3. Redeploy with updated detection rules. 4. Confirm app compatibility with device architecture. 5. Run 'Get-AppxPackage' to verify installation status."
+  },
+  {
+    "ErrorCode": "Missing",
+    "Message": "Resource or configuration missing during enrollment or deployment.",
+    "Context": "Autopilot profile, device record, or app package missing.",
+    "Solution": "1. Verify resource in Intune under Devices > All Devices or Apps > All Apps. 2. Re-upload hardware hash using 'Get-WindowsAutoPilotInfo.ps1' for devices. 3. Re-upload app package in Intune. 4. Check Autopilot diagnostics with 'mdmdiagnosticstool.exe /area Autopilot'. 5. Retry operation."
+  },
+  {
+    "ErrorCode": "Could not",
+    "Message": "Operation could not be completed due to unspecified issues.",
+    "Context": "Autopilot, MDM enrollment, or app installation with generic failure.",
+    "Solution": "1. Check event logs in Event Viewer under Windows Logs > Application and System. 2. Collect MDM logs with 'mdmdiagnosticstool.exe'. 3. Verify Intune configuration in admin center. 4. Update Windows via Settings > Windows Update. 5. Retry operation."
+  },
+  {
+    "ErrorCode": "Unexpected error",
+    "Message": "Unexpected error occurred during enrollment or app deployment.",
+    "Context": "Autopilot, MDM enrollment, or app installation with unforeseen issues.",
+    "Solution": "1. Check event logs in Event Viewer under Windows Logs > Application and System. 2. Collect MDM logs with 'mdmdiagnosticstool.exe'. 3. Update Windows via Settings > Windows Update. 4. Clear Intune cache by deleting 'C:\\ProgramData\\Microsoft\\IntuneManagementExtension'. 5. Retry operation."
+  },
+  {
+    "ErrorCode": "Severe error",
+    "Message": "Severe error halted enrollment or app deployment.",
+    "Context": "Autopilot, MDM enrollment, or app installation with critical failure.",
+    "Solution": "1. Collect MDM logs with 'mdmdiagnosticstool.exe'. 2. Check event logs in Event Viewer under Windows Logs > Application and System. 3. Reset device via 'Reset this PC' if necessary. 4. Reattempt operation. 5. Contact Microsoft support if persistent."
+  }
+]

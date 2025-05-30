@@ -1,154 +1,175 @@
-````markdown
-# Intune/Autopilot Log Analyzer
+# Intune/Autopilot Log Analyzer PowerShell Tool
 
-![PowerShell](https://img.shields.io/badge/PowerShell-Script-blue.svg)
-![Version](https://img.shields.io/badge/version-5.1-green)
-![AI-Ready](https://img.shields.io/badge/AI--Analysis-Optional-orange)
+**Version**: 5.1  
+**Author**: MD Faysal Mahmud
 
-> A PowerShell-based tool for parsing, diagnosing, and optionally AI-analyzing Intune/Autopilot deployment logs.
+**Purpose**: A PowerShell tool to quickly detect and analyze Intune/Autopilot enrollment errors using an offline error database and optional AI-powered diagnostics.
 
----
+## Table of Contents
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [First-Time Setup](#first-time-setup)
+- [Configuration](#configuration)
+  - [Error-Cloud Keywords](#error-cloud-keywords)
+  - [API Keys](#api-keys)
+- [Running the Tool](#running-the-tool)
+- [Main Menu Options](#main-menu-options)
+  - [1. Analyze Log File](#1-analyze-log-file)
+  - [2. Set or Update OpenAI API Key](#2-set-or-update-openai-api-key)
+  - [3. Select AI Model](#3-select-ai-model)
+  - [4. Analyze with AI Only](#4-analyze-with-ai-only)
+  - [5. Manage AI Providers](#5-manage-ai-providers)
+  - [6. Exit](#6-exit)
+- [Parse-LogFile Function](#parse-logfile-function)
+- [Error Database](#error-database)
+- [Troubleshooting](#troubleshooting)
+- [License](#license)
 
-## 🔧 Features
+## Prerequisites
+- Windows PowerShell (v5.1 or later)
+- Internet connectivity for AI analysis features (optional)
+- (Optional) API keys for OpenAI, Azure OpenAI, or Anthropic (Claude) for AI-powered diagnostics
 
-- ✅ Detects **hexadecimal** error codes (e.g., `0x80070643`)
-- ✅ Extracts **errorCode = #######** and context phrases like `exit code 1603`
-- ✅ Searches for over **300+ known failure keywords**
-- ✅ Matches against offline **JSON error database** with suggested fixes
-- ✅ Optionally runs AI-based analysis using **OpenAI**, **Azure OpenAI**, or **Claude**
-- ✅ Auto-export of analysis results to a timestamped `.txt` report
-- ✅ Menu-driven interface, user-friendly flow
+## Installation
+1. Clone or download this repository containing `LogAnalyzer.ps1`, `errorcloud.txt`, and `error_db.json`.
+2. Open a PowerShell prompt as Administrator.
+3. Navigate to the script folder:
+   ```powershell
+   cd C:\Path\To\LogAnalyzerFolder
+   ```
 
----
+## First-Time Setup
+PowerShell's default execution policy may prevent running scripts. To allow `LogAnalyzer.ps1` to run:
 
-## 📝 Requirements
+1. **Check Execution Policy**:
+   ```powershell
+   Get-ExecutionPolicy
+   ```
+   If it returns `Restricted`, scripts are blocked.
 
-- PowerShell 5.1+ or PowerShell Core
-- Windows OS (tested with Intune logs)
-- Internet connection for AI analysis (OpenAI/Azure/Claude)
-- Optional: `error_db.json` for offline match suggestions
+2. **Allow the Script**:
+   - **Option 1: Unblock the Script File** (Recommended):
+     ```powershell
+     Unblock-File .\LogAnalyzer.ps1
+     ```
+     This removes the "downloaded from the internet" restriction without changing the execution policy.
+   - **Option 2: Change Execution Policy**:
+     ```powershell
+     Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+     ```
+     `RemoteSigned` allows local scripts to run without signing but requires signed remote scripts.
+   - **Option 3: Bypass for a Single Session**:
+     ```powershell
+     powershell -ExecutionPolicy Bypass -File .\LogAnalyzer.ps1
+     ```
+     This bypasses the policy for the current session only.
 
----
+**Note**: Changing the execution policy or unblocking files may have security implications. Only use trusted scripts and revert to `Restricted` (`Set-ExecutionPolicy Restricted`) if needed.
 
-## 🚀 Usage
+## Configuration
 
-### 1. Clone the repo
+### Error-Cloud Keywords
+- On first run, `errorcloud.txt` is generated with hundreds of pre-populated error keywords and phrases.
+- Edit this file to add or modify comma-separated entries as needed.
 
-```bash
-git clone https://github.com/YOUR-USERNAME/Intune-Autopilot-Log-Analyzer.git
-cd Intune-Autopilot-Log-Analyzer
-````
+### API Keys
+To enable AI analysis, save your API keys in the following files (one key per file):
+- `apikey.txt` (OpenAI)
+- `azure_key.txt` (Azure OpenAI)
+- `claude_key.txt` (Anthropic/Claude)
 
-### 2. Run the analyzer
+Alternatively, set or update keys via the tool’s Main Menu (Options 2 and 5).
 
-```powershell
-.\LogAnalyzer.ps1
-```
+## Running the Tool
+1. From the PowerShell prompt, navigate to the folder containing `LogAnalyzer.ps1` by replacing `C:\Path\To\LogAnalyzerFolder` with the actual path to your downloaded or cloned repository folder:
+   ```powershell
+   cd C:\Path\To\LogAnalyzerFolder
+   ```
+   **Tip**: Copy the folder path from File Explorer and paste it into the command, ensuring the path is correct (e.g., `C:\Users\YourName\Downloads\LogAnalyzer`).
+2. Run the script:
+   ```powershell
+   .\LogAnalyzer.ps1
+   ```
+3. The Main Menu will appear:
+   ```
+   === Intune Log Analyzer Menu ===
+   1. Analyze Log File
+   2. Set or Update OpenAI API Key
+   3. Select AI Model (Current: gpt-4)
+   4. Analyze with AI Only
+   5. Manage AI Providers
+   6. Exit
+   Choose an option (1-6):
+   ```
 
-### 3. Choose from the menu:
+## Main Menu Options
 
-```
-1. Analyze Log File
-2. Set or Update OpenAI API Key
-3. Select AI Model (gpt-4, gpt-3.5-turbo)
-4. Analyze with AI Only
-5. Manage AI Providers
-6. Exit
-```
+### 1. Analyze Log File
+- Enter the path to your log file (e.g., `C:\Logs\IntuneManagementExtension.log`).
+- The tool displays:
+  - **Error Codes**: All `0x…` hex codes found.
+  - **Error Keywords**:
+    - Exact phrases like `errorCode = 3399548929`
+    - Contextual codes (e.g., `Exit code 1603`, `Status code: 0x80070005`)
+    - Keywords from `errorcloud.txt` found in the log.
+- Choose a specific code to analyze or press Enter to process all.
+- For each code:
+  - Matches against `error_db.json` for offline description and solutions.
+  - Shows context excerpts from the log.
+  - (Optional) AI analysis for root cause and suggested fixes.
+- Results are exported to a timestamped `LogAnalysis_YYYYMMDD_HHMMSS.txt` file.
 
----
+### 2. Set or Update OpenAI API Key
+- Prompts for and saves your OpenAI key to `apikey.txt`.
 
-## 📂 File Structure
+### 3. Select AI Model
+- Choose between:
+  - `gpt-4` (default)
+  - `gpt-3.5-turbo`
 
-```
-.
-├── LogAnalyzer.ps1         # Main script
-├── errorcloud.txt          # List of known keywords & error signatures
-├── error_db.json           # Optional offline error code -> fix mapping
-├── apikey.txt              # (generated) stored OpenAI key
-├── openai_key.txt          # (optional) stored AI provider keys
-├── LogAnalysis_*.txt       # Output report(s)
-```
+### 4. Analyze with AI Only
+- Enter the log file path and select an AI provider (OpenAI, Azure, or Claude).
+- AI analyzes all detected codes and keywords, skipping the offline database.
+- Results are exported to `AIAnalysis_YYYYMMDD_HHMMSS.txt`.
 
----
+### 5. Manage AI Providers
+- Add or update keys for OpenAI, Azure OpenAI, or Anthropic (Claude).
 
-## 🤖 AI Support (Optional)
+### 6. Exit
+- Closes the tool.
 
-If you enable AI analysis, the tool supports:
+## Parse-LogFile Function
+The `Parse-LogFile` function processes each log line and:
+- Extracts `0x…` hex codes.
+- Captures decimal phrases (e.g., `errorCode = 123456789`).
+- Identifies contextual codes (e.g., `Exit code 1618`, `Status code: 0x80070005`, `HRESULT 0x87D1041C`).
+- Matches case-insensitive keywords/phrases from `errorcloud.txt` with word boundaries.
 
-* **OpenAI API** ([https://platform.openai.com/](https://platform.openai.com/))
-* **Azure OpenAI** (via Azure deployment endpoint)
-* **Anthropic Claude API**
+**Returns**: A hashtable with:
+- `Codes`: `<hex code>` → array of lines
+- `Keywords`: `<phrase or keyword>` → array of lines
+- `Lines`: All log lines
 
-You will be prompted to enter your API key once and it will be securely stored in a text file (locally).
+## Error Database
+The `error_db.json` file contains:
+- `ErrorCode`
+- `Message/Description`
+- `Context`
+- `Solutions` (step-by-step)
 
-### Example Prompt Sent to AI:
+The script uses this for instant offline guidance.
 
-```
-Analyze this log excerpt for 0x80070642 and suggest root cause and fix:
-[log lines...]
-```
+## Troubleshooting
+- **No detections?**
+  - Verify `errorcloud.txt` contains expected keywords.
+  - Check log file path and permissions.
+- **AI not working?**
+  - Ensure API key files are correct.
+  - Confirm network access to AI endpoints.
+- **Log file not found?**
+  - Remove stray quotes or use full UNC paths.
+- **Performance on large logs?**
+  - Prefilter logs using PowerShell’s `Select-String`.
 
----
-
-## 🧠 How It Works
-
-The tool:
-
-* Parses each line in your log file
-* Searches for known patterns (`0x` codes, `errorCode = ####`, keywords)
-* Matches findings against a local `error_db.json` database
-* Optionally sends the context to an AI model for deeper insight
-
----
-
-## 🧩 Sample `error_db.json` Entry
-
-```json
-[
-  {
-    "ErrorCode": "0x80070643",
-    "Message": "Installation failed due to MSI issues.",
-    "Context": "Win32 App Installation",
-    "Solution": "1. Verify MSI logs\n2. Ensure .NET prerequisites\n3. Repackage app"
-  }
-]
-```
-
----
-
-## 📸 Screenshots *(Optional)*
-
-> Add screenshots of the tool menu and output here (if desired).
-
----
-
-## ⚖ License
-
-MIT License
-© 2025 [MD Faysal Mahmiud](mailto:faysaliteng@gmail.com)
-
----
-
-## 🙋‍♂️ Contributing
-
-* Found a new error not in the database? Add it to `error_db.json`
-* Pull requests welcome!
-* Or just open an issue with suggestions
-
----
-
-## 🔗 Related
-
-* [Intune Management Extension Logs](https://learn.microsoft.com/en-us/mem/intune/apps/intune-management-extension)
-* [Windows Autopilot Troubleshooting](https://learn.microsoft.com/en-us/mem/autopilot/troubleshooting)
-* [OpenAI API Docs](https://platform.openai.com/docs/)
-
----
-
-```
-
----
-
-Let me know if you'd like a version with embedded screenshots, auto-deploy scripts, or GitHub Actions CI setup too.
-```
+## License
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.

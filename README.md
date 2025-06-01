@@ -59,7 +59,7 @@ PowerShell’s execution policy may block scripts. To allow `LogAnalyzer2.ps1`:
      ```
    - **Option 2: Change Execution Policy**:
      ```powershell
-     Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+     Set-ExecutionPolicy -Scope LocalMachine -ExecutionPolicy RemoteSigned -Force
      ```
    - **Option 3: Bypass for a Single Session**:
      ```powershell

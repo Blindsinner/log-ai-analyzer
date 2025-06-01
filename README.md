@@ -61,6 +61,7 @@ PowerShell's default execution policy may prevent running scripts. To allow `Log
    - **Option 3: Bypass for a Single Session**:
      ```powershell
      powershell -ExecutionPolicy Bypass -File .\LogAnalyzer.ps1
+     powershell -ExecutionPolicy Bypass -File .\LogAnalyzer1.ps1
      ```
      This bypasses the policy for the current session only.
 
@@ -83,9 +84,9 @@ Alternatively, set or update keys via the tool’s Main Menu (Options 2 and 5).
 ## Running the Tool
 1. From the PowerShell prompt, navigate to the folder containing `LogAnalyzer.ps1` by replacing `C:\Path\To\LogAnalyzerFolder` with the actual path to your downloaded or cloned repository folder:
    ```powershell
-   cd C:\Path\To\LogAnalyzerFolder
+   cd "C:\YourPath\LogAnalyzer Folder"
    ```
-   **Tip**: Copy the folder path from File Explorer and paste it into the command, ensuring the path is correct (e.g., `C:\Users\YourName\Downloads\LogAnalyzer`).
+   **Tip**: Copy the folder path from File Explorer and paste it into the command, ensuring the path is correct (e.g., "C:\Users\YourName\Downloads\LogAnalyzer").
 2. Run the script:
    ```powershell
    .\LogAnalyzer.ps1

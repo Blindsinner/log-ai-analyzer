@@ -1,15 +1,21 @@
 # Intune/Autopilot Log Analyzer PowerShell Tool
 # Version: 5.2
-# Author: MD FAYSAL MAHMUD (faysaliteng@gmail.com)
+# Author: MD FAYSAL MAHMIUD (faysaliteng@gmail.com)
 # Enhanced with unified error analysis, multi-file support, HTML export, and online search for missing entries
 
 # -----------------------------------
-# Set output directory to script location
+# Set output directory to 'Analyzed Result' folder in script location and create it if it doesn't exist
+# Keep error_db.json, errorcloud.txt, and apikey.txt in the root directory
+# Only exported files (HTML and text result) are saved in Analyzed Result
 # -----------------------------------
-$OutputDir      = Split-Path $MyInvocation.MyCommand.Path
-$apiKeyPath     = Join-Path $OutputDir "apikey.txt"
-$errorCloudPath = Join-Path $OutputDir "errorcloud.txt"
-$errorDbPath    = Join-Path $OutputDir "error_db.json"
+$ScriptDir      = Split-Path $MyInvocation.MyCommand.Path
+$OutputDir      = Join-Path $ScriptDir "Analyzed Result"
+if (-not (Test-Path $OutputDir)) {
+    New-Item -Path $OutputDir -ItemType Directory -Force | Out-Null
+}
+$apiKeyPath     = Join-Path $ScriptDir "apikey.txt"
+$errorCloudPath = Join-Path $ScriptDir "errorcloud.txt"
+$errorDbPath    = Join-Path $ScriptDir "error_db.json"
 $global:model   = 'gpt-4'
 
 # -----------------------------------
@@ -176,62 +182,97 @@ function Invoke-AIAnalysis {
 }
 
 # -----------------------------------
-# Function Export-LogAnalysisToHtml: builds a styled HTML summary
+# Function Export-LogAnalysisToHtml: builds a styled, responsive HTML summary
 # -----------------------------------
 function Export-LogAnalysisToHtml {
     param([hashtable]$AnalysisResults, [string]$OutputPath)
     $htmlPath = Join-Path $OutputPath ("LogAnalysis_$(Get-Date -Format 'yyyyMMdd_HHmmss').html")
     $body = @"
-<html>
-  <head>
-    <meta charset='UTF-8'>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Intune Log Analysis Report</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-      body { font-family: Arial, sans-serif; margin: 20px; }
-      h1 { color: #007bff; }
-      .table { margin-top: 20px; border-collapse: collapse; width: 100%; }
-      .table th, .table td { border: 1px solid #ddd; padding: 8px; }
-      .table th { background-color: #343a40; color: white; }
-      .error-code { font-weight: bold; color: #dc3545; }
-      .context { font-style: italic; color: #6c757d; }
-      .ai-analysis { background-color: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 20px; }
-      pre { white-space: pre-wrap; }
+        body { font-family: Arial, sans-serif; background-color: #f8f9fa; }
+        .container { max-width: 1200px; margin: 20px auto; }
+        h1 { color: #007bff; }
+        .error-card { margin-bottom: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .error-header { background-color: #343a40; color: white; padding: 10px; border-radius: 8px 8px 0 0; }
+        .error-body { padding: 15px; }
+        .error-code { font-weight: bold; color: #dc3545; }
+        .context { font-style: italic; color: #6c757d; }
+        .ai-analysis { background-color: #f1f1f1; padding: 10px; border-radius: 5px; margin-bottom: 20px; }
+        .solutions-list { margin-top: 10px; }
+        pre { white-space: pre-wrap; word-wrap: break-word; background-color: #f1f1f1; padding: 10px; border-radius: 4px; }
+        .no-data { color: #dc3545; font-weight: bold; }
+        @media (max-width: 576px) {
+            .error-header h3 { font-size: 1.2rem; }
+            .error-body { font-size: 0.9rem; }
+            .container { margin: 10px; }
+        }
     </style>
-  </head>
-  <body>
-    <div class='container'>
-      <h1>Intune Log Analysis Report</h1>
-      <p><strong>Generated on:</strong> $(Get-Date)</p>
-      <h2>Detected Errors</h2>
-      <table class='table'>
-        <thead>
-          <tr><th>Error Code/Keyword</th><th>Context Excerpt</th><th>Offline DB Match</th></tr>
-        </thead>
-        <tbody>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center my-4">Intune Log Analysis Report</h1>
+        <p><strong>Generated on:</strong> $(Get-Date)</p>
+        <h2>Detected Errors</h2>
+        <div class="row">
 "@
+    if ($AnalysisResults.Contexts.Keys.Count -eq 0) {
+        $body += "<div class='col-12'><p class='text-center text-danger'>No errors found in the log.</p></div>`n"
+    }
     foreach ($key in $AnalysisResults.Contexts.Keys) {
-        $excerpt  = $AnalysisResults.Contexts[$key] -replace '<','&lt;' -replace '>','&gt;'
-        $dbMatch  = $null
+        $excerpt = $AnalysisResults.Contexts[$key] -replace '<','&lt;' -replace '>','&gt;'
+        $dbMatch = $null
+        $solutionsHtml = '<span class="no-data">N/A</span>'
         if ($AnalysisResults.DatabaseMatches.ContainsKey($key)) {
             $dbMatch = $AnalysisResults.DatabaseMatches[$key].Message -replace '<','&lt;' -replace '>','&gt;'
+            $solutions = $AnalysisResults.DatabaseMatches[$key].Solution -split "`n" | Where-Object { $_ -match '\S' }
+            if ($solutions) {
+                $solutionsHtml = "<ol class='solutions-list'>"
+                foreach ($solution in $solutions) {
+                    $solution = $solution -replace '<','&lt;' -replace '>','&gt;'
+                    $solutionsHtml += "<li>$solution</li>"
+                }
+                $solutionsHtml += "</ol>"
+            }
         }
-        $displayMatch = if ($dbMatch) { $dbMatch } else { 'N/A' }
-        $body += "          <tr><td class='error-code'>$key</td><td class='context'>$excerpt</td><td>$displayMatch</td></tr>`n"
+        $displayMatch = if ($dbMatch) { $dbMatch } else { '<span class="no-data">N/A</span>' }
+        $body += @"
+            <div class="col-12">
+                <div class="error-card">
+                    <div class="error-header">
+                        <h3 class="error-code">$key</h3>
+                    </div>
+                    <div class="error-body">
+                        <p><strong>Context Excerpt:</strong></p>
+                        <pre>$excerpt</pre>
+                        <p><strong>Offline DB Match:</strong> $displayMatch</p>
+                        <p><strong>Recommended Solutions:</strong></p>
+                        $solutionsHtml
+                    </div>
+                </div>
+            </div>
+"@
     }
     $body += @"
-        </tbody>
-      </table>
+        </div>
 "@
     if ($AnalysisResults.AIAnalyses.Keys.Count -gt 0) {
-        $body += "      <h2>AI Analysis</h2>`n"
+        $body += "<h2>AI Analysis</h2>`n"
         foreach ($key in $AnalysisResults.AIAnalyses.Keys) {
             $aiContent = $AnalysisResults.AIAnalyses[$key] -replace '<','&lt;' -replace '>','&gt;'
-            $body += "      <h3 class='error-code'>$key</h3>`n      <div class='ai-analysis'><pre>$aiContent</pre></div>`n"
+            $body += "<h3 class='error-code'>$key</h3>`n<div class='ai-analysis'><pre>$aiContent</pre></div>`n"
         }
     }
     $body += @"
     </div>
-  </body>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
 </html>
 "@
     $body | Out-File -FilePath $htmlPath -Encoding utf8
@@ -349,57 +390,50 @@ function Main-Menu {
                 $analysisResults = [ordered]@{ Contexts = @{}; DatabaseMatches = @{}; AIAnalyses = @{} }
 
                 foreach ($target in $targets) {
-                    $value = $target.Value
-                    $type  = $target.Type
-                    Write-Host "`n=== Analysis for $value ($type) ===" -ForegroundColor Yellow
-                    Add-Content $outputPath "=== Analysis for $value ($type) ==="
+    $value = $target.Value
+    $type  = $target.Type
+    Write-Host "`n=== Analysis for $value ($type) ===" -ForegroundColor Yellow
+    Add-Content $outputPath "=== Analysis for $value ($type) ==="
 
-                    if ($type -eq 'Code' -and $data.Codes.ContainsKey($value)) {
-                        $excerpt = ($data.Codes[$value] -join "`n").Substring(
-                            0,
-                            [Math]::Min(1000, ($data.Codes[$value] -join "`n").Length)
-                        )
-                    } elseif ($type -eq 'Keyword' -and $data.Keywords.ContainsKey($value)) {
-                        $excerpt = ($data.Keywords[$value] -join "`n").Substring(
-                            0,
-                            [Math]::Min(1000, ($data.Keywords[$value] -join "`n").Length)
-                        )
-                    } else {
-                        $excerpt = "No occurrences found in the log."
-                    }
-                    $analysisResults.Contexts[$value] = $excerpt
+    if ($type -eq 'Code' -and $data.Codes.ContainsKey($value)) {
+        $excerpt = ($data.Codes[$value] -join "`n").Substring(
+            0,
+            [Math]::Min(1000, ($data.Codes[$value] -join "`n").Length)
+        )
+    } elseif ($type -eq 'Keyword' -and $data.Keywords.ContainsKey($value)) {
+        $excerpt = ($data.Keywords[$value] -join "`n").Substring(
+            0,
+            [Math]::Min(1000, ($data.Keywords[$value] -join "`n").Length)
+        )
+    } else {
+        $excerpt = "No occurrences found in the log."
+    }
+    $analysisResults.Contexts[$value] = $excerpt
 
-                    if ($type -eq 'Code') {
-                        $dbEntry = Find-ErrorInDatabase -ErrorInput $value
-                        if ($dbEntry) {
-                            Write-Host "`n[Offline Database Match]" -ForegroundColor Green
-                            Write-Host "Error Code: $($dbEntry.ErrorCode)"
-                            Write-Host "Description: $($dbEntry.Message)"
-                            Write-Host "`nRecommended Solutions:"
-                            $solutions = $dbEntry.Solution.Split("`n")
-                            $numberedSolutionsList = @()
-                            for ($i = 0; $i -lt $solutions.Count; $i++) {
-                                $prefixed = "#$($i + 1). $($solutions[$i])"
-                                # Output each solution on its own line to console:
-                                Write-Host $prefixed
-                                # Collect for writing into the file later
-                                $numberedSolutionsList += $prefixed
-                            }
-                            # Append to the output file, each solution on its own line:
-                            Add-Content $outputPath "`n[Offline Database Match]`nDescription: $($dbEntry.Message)`nRecommended Solutions:"
-                            foreach ($line in $numberedSolutionsList) {
-                                Add-Content $outputPath $line
-                            }
-                            $analysisResults.DatabaseMatches[$value] = $dbEntry
-                        } else {
-                            Write-Host "WARNING: No offline data found for $value" -ForegroundColor Yellow
-                            $missingItems += $value
-                        }
-                    } else {
-                        Write-Host "WARNING: No offline data found for $value" -ForegroundColor Yellow
-                        $missingItems += $value
-                    }
-                }
+    # Check database for both Code and Keyword types
+    $dbEntry = Find-ErrorInDatabase -ErrorInput $value
+    if ($dbEntry) {
+        Write-Host "`n[Offline Database Match]" -ForegroundColor Green
+        Write-Host "Error Code: $($dbEntry.ErrorCode)"
+        Write-Host "Description: $($dbEntry.Message)"
+        Write-Host "`nRecommended Solutions:"
+        $solutions = $dbEntry.Solution.Split("`n")
+        $numberedSolutionsList = @()
+        for ($i = 0; $i -lt $solutions.Count; $i++) {
+            $prefixed = "#$($i + 1). $($solutions[$i])"
+            Write-Host $prefixed
+            $numberedSolutionsList += $prefixed
+        }
+        Add-Content $outputPath "`n[Offline Database Match]`nDescription: $($dbEntry.Message)`nRecommended Solutions:"
+        foreach ($line in $numberedSolutionsList) {
+            Add-Content $outputPath $line
+        }
+        $analysisResults.DatabaseMatches[$value] = $dbEntry
+    } else {
+        Write-Host "WARNING: No offline data found for $value" -ForegroundColor Yellow
+        $missingItems += $value
+    }
+}
 
                 # If any missing offline entries, offer online search
                 if ($missingItems.Count -gt 0) {

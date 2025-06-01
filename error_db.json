@@ -1318,5 +1318,149 @@
     "Message": "Severe error halted enrollment or app deployment.",
     "Context": "Autopilot, MDM enrollment, or app installation with critical failure.",
     "Solution": "1. Collect MDM logs with 'mdmdiagnosticstool.exe'. 2. Check event logs in Event Viewer under Windows Logs > Application and System. 3. Reset device via 'Reset this PC' if necessary. 4. Reattempt operation. 5. Contact Microsoft support if persistent."
+  },
+  {
+    "ErrorCode": "0x80070642",
+    "Message": "ERROR_INSTALL_USEREXIT: The installation process was interrupted, often due to user cancellation or a conflict with an existing application, such as Microsoft Edge WebView2 Runtime, during the Autopilot Enrollment Status Page (ESP).",
+    "Context": "App deployment failure during Autopilot ESP, typically for Win32 apps or dependencies like WebView2.",
+    "Solution": "1. Unassign the conflicting app (e.g., WebView2) from the ESP in Intune under Apps > All Apps > select app > Properties > Assignments, and remove from ESP-required groups. 2. Uninstall existing WebView2 Runtime using 'setup.exe --uninstall --msedgewebview --system-level --force-uninstall' in an elevated Command Prompt. 3. Deploy WebView2 with silent install flags: 'MicrosoftEdgeWebView2RuntimeInstallerX64.exe /silent /install'. 4. Check detection logic in Intune by ensuring the app’s registry key (e.g., 'HKLM:\\SOFTWARE\\Microsoft\\EdgeWebView') or file path exists. 5. Verify no pending reboots in 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\PendingFileRenameOperations' and reboot if needed."
+  },
+  {
+    "ErrorCode": "0x8018000a",
+    "Message": "Device is already enrolled in Intune or joined to Microsoft Entra ID by another user, preventing re-enrollment due to conflicting device records.",
+    "Context": "Re-enrollment attempts during Autopilot or manual MDM enrollment, often with reused devices.",
+    "Solution": "1. Sign out of Windows and sign in with the account that enrolled the device, then remove the work account in 'Settings > Accounts > Work Access'. 2. Delete the device record in Intune under Devices > All Devices > select device > Delete. 3. Remove the Entra ID join record in Azure portal under Azure Active Directory > Devices > All Devices > select device > Delete. 4. Re-import the hardware hash using 'Get-WindowsAutoPilotInfo.ps1' and upload it in Intune under Devices > Enroll Devices > Windows Autopilot Devices. 5. Reset the device to factory settings via 'Reset this PC' in Windows Recovery Environment if conflicts persist."
+  },
+  {
+    "ErrorCode": "0x801c03f3",
+    "Message": "Enrollment Status Page timed out during app or policy installation.",
+    "Context": "Autopilot ESP during device setup, often due to slow network or large app installations.",
+    "Solution": "1. Increase ESP timeout in Intune under Devices > Enroll Devices > Windows Autopilot Profiles. 2. Verify network stability with 'ping manage.microsoft.com'. 3. Reduce the number of required apps in ESP by editing assignments in Intune under Apps > All Apps > Properties > Assignments. 4. Check ESP logs with 'mdmdiagnosticstool.exe'. 5. Retry enrollment after optimizing app deployment."
+  },
+  {
+    "ErrorCode": "0x8007000e",
+    "Message": "Enrollment failed due to insufficient memory or system resources.",
+    "Context": "MDM or Autopilot enrollment on devices with low memory or high resource usage.",
+    "Solution": "1. Check device memory usage in Task Manager under Performance. 2. Close unnecessary applications or processes. 3. Ensure device meets minimum hardware requirements for Windows 10/11 Pro. 4. Update Windows via Settings > Windows Update. 5. Retry enrollment."
+  },
+  {
+    "ErrorCode": "0x80072f0d",
+    "Message": "Enrollment failed due to certificate authority binding issues.",
+    "Context": "MDM enrollment or policy sync with invalid or missing certificates.",
+    "Solution": "1. Verify certificates in 'certlm.msc' under Personal > Certificates. 2. Install missing root certificates from Microsoft. 3. Ensure connectivity to Microsoft certificate servers. 4. Sync device time in 'Settings > Time & Language'. 5. Collect MDM logs with 'mdmdiagnosticstool.exe'."
+  },
+  {
+    "ErrorCode": "AADSTS90002",
+    "Message": "Authentication failed due to invalid tenant identifier.",
+    "Context": "User sign-in during enrollment or Company Portal with incorrect tenant configuration.",
+    "Solution": "1. Verify tenant ID in Microsoft 365 admin center under Setup > Domains. 2. Ensure user is signing in with correct UPN matching the tenant. 3. Sync Entra ID with 'Start-ADSyncSyncCycle -PolicyType Delta' on AD Connect server. 4. Check sign-in logs in Azure portal under Azure Active Directory > Sign-ins. 5. Reattempt sign-in."
+  },
+  {
+    "ErrorCode": "0x87d101f4",
+    "Message": "Syncml(500): The recipient encountered an unexpected condition which prevented it from fulfilling the request, resulting in a device compliance error.",
+    "Context": "Device enrollment or compliance check in Intune, often during policy sync or when applying configuration profiles like USB blocking or VPN settings.",
+    "Solution": "1. Force a manual sync in the Company Portal app via Settings > Sync this device. 2. Verify device compliance in Intune under Devices > All Devices > select device > Device Compliance. 3. Check for conflicting policies in Intune under Devices > Configuration Profiles and resolve overlaps. 4. Reset the device by removing it from Intune (Devices > All Devices > select device > Retire/Wipe), then re-enroll via Settings > Accounts > Access work or school. 5. Review event logs on the device using 'eventvwr.msc' under Applications and Services Logs > Microsoft > Windows > DeviceManagement-Enterprise-Diagnostics-Provider > Admin. 6. If unresolved, contact Microsoft Support via the Intune admin center."
+  },
+  {
+    "ErrorCode": "0x87d1fde8",
+    "Message": "Remediation failed (-2016281112): The system cannot find the file specified or the policy configuration failed to apply.",
+    "Context": "Device configuration profile deployment, often with custom OMA-URI settings (e.g., Chrome policies, VPN, or password policies) or conditional access issues.",
+    "Solution": "1. Verify the OMA-URI path in the configuration profile (e.g., './Device/Vendor/MSFT/Policy/Config/...') using a text comparison tool like diffchecker.com to avoid formatting errors. 2. Check registry keys under 'HKLM:\\SOFTWARE\\Microsoft\\PolicyManager\\AdmxDefault' for policy application. 3. Manually sync the device in Intune under Settings > Accounts > Access work or school > Info > Sync. 4. Ensure the device is enrolled and compliant in Intune under Devices > All Devices. 5. Disable conditional access temporarily in Azure portal under Azure Active Directory > Protect & secure > Conditional Access to test. 6. Review Intune logs using 'mdmdiagnosticstool.exe' and event logs in 'eventvwr.msc'. 7. If using custom profiles, consider switching to standard profiles to avoid XML mismatch issues."
+  },
+  {
+    "ErrorCode": "0x87d30065",
+    "Message": "Failed to retrieve information for app installation, resulting in installation failure.",
+    "Context": "App deployment via Intune, often with Win32 or Microsoft Store apps, due to policy conflicts or device sync issues.",
+    "Solution": "1. Check installation details in Intune under Apps > All Apps > select app > Device install status. 2. Review logs in Event Viewer under Applications and Services Logs > Microsoft > Windows > AppxPackagingOM > Microsoft-Windows-AppxPackaging/Operational for errors like 404 or 465. 3. Ensure the device is synced with Intune via Settings > Accounts > Access work or school > Info > Sync. 4. Verify app dependencies and licensing in Intune under Apps > All Apps > Properties. 5. Remove and redeploy the app in Intune under Apps > All Apps > select app > Properties > Assignments. 6. If persistent, raise a support ticket via Intune admin center under Help and support, including error details from the Installation blade and Event Viewer."
+  },
+    {
+    "ErrorCode": "errorCode = 3399548929",
+    "Message": "Failed to get AAD token during Intune Management Extension authentication.",
+    "Context": "Device enrollment or policy sync, often during Hybrid Azure AD Join or Autopilot, when the Intune Management Extension fails to authenticate with Azure AD.",
+    "Solution": "1. Verify network connectivity to 'login.microsoftonline.com' using 'ping' or 'Test-NetConnection'. 2. Check Azure AD device registration in Azure portal under Azure Active Directory > Devices > All Devices. 3. Ensure the device is not already enrolled by checking 'dsregcmd /status' for AzureAdJoined status. 4. Delete the device from Intune (Devices > All Devices > select device > Delete) and Azure AD if duplicate records exist. 5. Review IME logs in 'C:\\ProgramData\\Microsoft\\IntuneManagementExtension\\Logs\\IntuneManagementExtension.log' for details. 6. Run 'Get-ScheduledTask | Where-Object {$_.TaskName -eq 'PushLaunch'} | Start-ScheduledTask' to trigger enrollment. 7. If persistent, collect logs with 'mdmdiagnosticstool.exe' and contact Microsoft Support."
+  },
+  {
+    "ErrorCode": "429",
+    "Message": "HTTP 429 Too Many Requests: The Intune service received too many requests in a short period.",
+    "Context": "Device enrollment, policy sync, or app deployment, often during high-volume operations or API calls.",
+    "Solution": "1. Reduce the frequency of sync requests by adjusting schedules in Intune under Devices > Windows > Windows Enrollment > Automatic Enrollment. 2. Check for scripts or automation hitting Intune APIs excessively via Microsoft Graph. 3. Wait for a short period (e.g., 5-10 minutes) and retry. 4. Monitor Intune service health in the Microsoft 365 admin center. 5. If using Graph API, implement exponential backoff per Microsoft documentation. 6. Contact Microsoft Support if the issue persists."
+  },
+  {
+    "ErrorCode": "504",
+    "Message": "HTTP 504 Gateway Timeout: The Intune server did not receive a timely response from an upstream server.",
+    "Context": "Device enrollment or policy sync, often due to network latency or server overload.",
+    "Solution": "1. Verify internet connectivity and latency to 'manage.microsoft.com' using 'ping' or 'tracert'. 2. Check Intune service health in the Microsoft 365 admin center. 3. Retry the operation after a short delay. 4. Ensure firewall/proxy settings allow Intune endpoints (e.g., '*.manage.microsoft.com'). 5. Collect MDM logs with 'mdmdiagnosticstool.exe' to identify the failing component. 6. If persistent, open a support ticket with Microsoft."
+  },
+  {
+    "ErrorCode": "500",
+    "Message": "HTTP 500 Internal Server Error: An unexpected condition occurred on the Intune server.",
+    "Context": "Device enrollment, policy application, or SCEP certificate deployment, often due to server-side issues.",
+    "Solution": "1. Check Intune service health in the Microsoft 365 admin center. 2. Retry the operation after a short period. 3. Verify configuration settings in Intune (e.g., SCEP URLs, NDES connector) for accuracy. 4. Review event logs in 'eventvwr.msc' under Applications and Services Logs > Microsoft > Windows > DeviceManagement-Enterprise-Diagnostics-Provider. 5. Collect logs with 'mdmdiagnosticstool.exe'. 6. Contact Microsoft Support for server-side investigation."
+  },
+  {
+    "ErrorCode": "401",
+    "Message": "HTTP 401 Unauthorized: The device or user lacks valid credentials to access Intune resources.",
+    "Context": "Device enrollment or policy sync, often during Azure AD authentication or conditional access enforcement.",
+    "Solution": "1. Verify user credentials and Intune license in Azure AD under Users > All Users > Licenses. 2. Check conditional access policies in Azure portal under Azure Active Directory > Protect & secure > Conditional Access. 3. Ensure the device is Azure AD joined using 'dsregcmd /status'. 4. Sync the device via Settings > Accounts > Access work or school > Info > Sync. 5. Review sign-in logs in Azure AD under Sign-ins. 6. If Hybrid Azure AD Join, troubleshoot with 'https://learn.microsoft.com/en-us/azure/active-directory/devices/troubleshoot-hybrid-join-windows-current'."
+  },
+  {
+    "ErrorCode": "502",
+    "Message": "HTTP 502 Bad Gateway: The Intune server received an invalid response from an upstream server.",
+    "Context": "Device enrollment or policy sync, often due to proxy or gateway issues.",
+    "Solution": "1. Check proxy/firewall settings to ensure Intune endpoints ('*.manage.microsoft.com') are accessible. 2. Verify Intune service health in the Microsoft 365 admin center. 3. Test connectivity to 'manage.microsoft.com' using 'Test-NetConnection'. 4. Review IME logs in 'C:\\ProgramData\\Microsoft\\IntuneManagementExtension\\Logs'. 5. Retry after a short delay. 6. Contact your network team or Microsoft Support if unresolved."
+  },
+  {
+    "ErrorCode": "408",
+    "Message": "HTTP 408 Request Timeout: The Intune server did not receive the complete request in time.",
+    "Context": "Device enrollment or policy sync, often due to network interruptions or slow connections.",
+    "Solution": "1. Verify network stability with 'ping manage.microsoft.com -t'. 2. Check for bandwidth issues or network throttling. 3. Retry the operation in a stable network environment. 4. Ensure firewall settings allow Intune endpoints. 5. Collect MDM logs with 'mdmdiagnosticstool.exe'. 6. If persistent, contact Microsoft Support."
+  },
+  {
+    "ErrorCode": "404",
+    "Message": "HTTP 404 Not Found: The requested Intune resource or endpoint was not found.",
+    "Context": "App deployment or policy sync, often due to misconfigured URLs or deleted resources.",
+    "Solution": "1. Verify the resource (e.g., app, policy) exists in Intune under Apps > All Apps or Devices > Configuration Profiles. 2. Check the endpoint URL in configuration profiles or SCEP settings. 3. Review event logs in 'eventvwr.msc' under Applications and Services Logs > Microsoft > Windows > AppxPackagingOM. 4. Reassign the resource in Intune. 5. Collect logs with 'mdmdiagnosticstool.exe'. 6. Contact Microsoft Support if the resource is missing."
+  },
+  {
+    "ErrorCode": "503",
+    "Message": "HTTP 503 Service Unavailable: The Intune server is temporarily unable to handle the request.",
+    "Context": "Device enrollment, policy sync, or SCEP deployment, often due to server maintenance or overload.",
+    "Solution": "1. Check Intune service health in the Microsoft 365 admin center. 2. Retry the operation after a short delay. 3. Verify NDES/SCEP configuration if related to certificate deployment. 4. Review event logs in 'eventvwr.msc' under Windows Logs > Application for Event ID 8 or 2. 5. Ensure CRL URLs are accessible from the NDES server. 6. Contact Microsoft Support if unresolved."
+  },
+  {
+    "ErrorCode": "ECS endpoint failed",
+    "Message": "The Enrollment Configuration Service (ECS) endpoint failed to respond during Intune enrollment.",
+    "Context": "Device enrollment, often during Autopilot or MDM enrollment, due to network or service issues.",
+    "Solution": "1. Verify connectivity to Intune endpoints ('*.manage.microsoft.com') using 'Test-NetConnection'. 2. Check Intune service health in the Microsoft 365 admin center. 3. Ensure firewall/proxy settings allow ECS endpoints. 4. Review IME logs in 'C:\\ProgramData\\Microsoft\\IntuneManagementExtension\\Logs'. 5. Retry enrollment after a delay. 6. Contact Microsoft Support for endpoint status."
+  },
+  {
+    "ErrorCode": "GetAADAuthToken - Failed",
+    "Message": "Failed to acquire an Azure AD authentication token during Intune Management Extension operations.",
+    "Context": "Device enrollment or policy sync, often due to Azure AD authentication issues or network restrictions.",
+    "Solution": "1. Check Azure AD connectivity with 'dsregcmd /status'. 2. Verify user/device credentials and Intune license in Azure AD. 3. Ensure network access to 'login.microsoftonline.com'. 4. Review IME logs in 'C:\\ProgramData\\Microsoft\\IntuneManagementExtension\\Logs'. 5. Run 'Get-ScheduledTask | Where-Object {$_.TaskName -eq 'PushLaunch'} | Start-ScheduledTask'. 6. If Hybrid Azure AD Join, troubleshoot with 'https://learn.microsoft.com/en-us/azure/active-directory/devices/troubleshoot-hybrid-join-windows-current'."
+  },
+  {
+    "ErrorCode": "MoveMTLSTrafficToAgentsEndpoint not found",
+    "Message": "The MoveMTLSTrafficToAgentsEndpoint operation was not found, indicating a configuration or service issue.",
+    "Context": "Intune Management Extension or policy application, often during complex policy deployments.",
+    "Solution": "1. Verify Intune service health in the Microsoft 365 admin center. 2. Check for recent changes in Intune policies or endpoints. 3. Review IME logs in 'C:\\ProgramData\\Microsoft\\IntuneManagementExtension\\Logs'. 4. Ensure the device is synced via Settings > Accounts > Access work or school > Info > Sync. 5. Collect logs with 'mdmdiagnosticstool.exe'. 6. Contact Microsoft Support for endpoint configuration issues."
+  },
+  {
+    "ErrorCode": "EnablePutWithTupleResult not found",
+    "Message": "The EnablePutWithTupleResult operation was not found, indicating a missing or unsupported Intune feature.",
+    "Context": "Policy or app deployment, often when attempting to apply unsupported or misconfigured settings.",
+    "Solution": "1. Verify the policy or app configuration in Intune under Devices > Configuration Profiles or Apps > All Apps. 2. Check for deprecated or unsupported features in Microsoft documentation. 3. Review IME logs in 'C:\\ProgramData\\Microsoft\\IntuneManagementExtension\\Logs'. 4. Simplify the policy or app settings and redeploy. 5. Collect logs with 'mdmdiagnosticstool.exe'. 6. Contact Microsoft Support for clarification on the operation."
+  },
+  {
+    "ErrorCode": "Failed to get AAD token",
+    "Message": "The Intune Management Extension failed to obtain an Azure AD token for authentication.",
+    "Context": "Device enrollment, policy sync, or app installation, often during Hybrid Azure AD Join or Autopilot.",
+    "Solution": "1. Verify Azure AD join status with 'dsregcmd /status'. 2. Ensure network connectivity to 'login.microsoftonline.com'. 3. Check user/device licenses in Azure AD. 4. Review IME logs in 'C:\\ProgramData\\Microsoft\\IntuneManagementExtension\\Logs'. 5. Delete duplicate device records in Intune and Azure AD. 6. Run 'Get-ScheduledTask | Where-Object {$_.TaskName -eq 'PushLaunch'} | Start-ScheduledTask'. 7. Contact Microsoft Support if unresolved."
+  },
+  {
+    "ErrorCode": "User check is failed",
+    "Message": "AAD user check failed, often due to invalid credentials or missing Azure AD token.",
+    "Context": "Device enrollment or policy sync, typically when the Intune Management Extension cannot validate the user.",
+    "Solution": "1. Verify user credentials and Intune license in Azure AD under Users > All Users. 2. Check Azure AD sign-in logs in Azure portal under Azure Active Directory > Sign-ins. 3. Ensure the device is Azure AD joined with 'dsregcmd /status'. 4. Sync the device via Settings > Accounts > Access work or school > Info > Sync. 5. Review IME logs in 'C:\\ProgramData\\Microsoft\\IntuneManagementExtension\\Logs'. 6. If Hybrid Azure AD Join, troubleshoot with 'https://learn.microsoft.com/en-us/azure/active-directory/devices/troubleshoot-hybrid-join-windows-current'. 7. Contact Microsoft Support."
   }
 ]

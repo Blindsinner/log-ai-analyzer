@@ -1,7 +1,7 @@
 # Intune/Autopilot Log Analyzer PowerShell Tool
 
 **Version**: 5.2  
-**Author**: MD Faysal Mahmud (faysaliteng@gmail.com)
+**Author**: MD Faysal Mahmud
 
 **Purpose**: A PowerShell tool to detect and analyze Intune/Autopilot enrollment errors using an offline error database, user-defined error keywords, and optional AI-powered diagnostics. Features unified error analysis, multi-file support, responsive HTML export, and online search for missing entries.
 

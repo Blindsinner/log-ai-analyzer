@@ -1482,7 +1482,7 @@
     "Solution": "1. Ensure all installers are configured with silent flags (e.g., `/quiet`, `/norestart`) to prevent interactive prompts. 2. Check that no pre-existing version of the app causes unexpected behavior or conflicts. 3. Use custom wrapper scripts to detect and handle edge conditions. 4. Avoid deploying interactive apps during ESP—assign them after login instead. 5. Validate install logs under `C:\\ProgramData\\Microsoft\\IntuneManagementExtension\\Logs\\` and retest deployment."
   },
   {
-    "ErrorCode": "exitCode = 0",
+    "ErrorCode": "exitCode 0",
     "Message": "SUCCESS - The installation or script completed successfully.",
     "Context": "The installer executed without errors and exited cleanly.",
     "Solution": "No action required. You can confirm success via Intune app install status, local logs, or detection logic output."

@@ -1,6 +1,6 @@
 # Intune/Autopilot Log Analyzer PowerShell Tool
 # Version: 5.2
-# Author: MD FAYSAL MAHMIUD (faysaliteng@gmail.com)
+# Author: MD FAYSAL MAHMUD (faysaliteng@gmail.com)
 # Enhanced with unified error analysis, multi-file support, HTML export, and online search for missing entries
 
 # -----------------------------------

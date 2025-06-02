@@ -1462,5 +1462,29 @@
     "Message": "AAD user check failed, often due to invalid credentials or missing Azure AD token.",
     "Context": "Device enrollment or policy sync, typically when the Intune Management Extension cannot validate the user.",
     "Solution": "1. Verify user credentials and Intune license in Azure AD under Users > All Users. 2. Check Azure AD sign-in logs in Azure portal under Azure Active Directory > Sign-ins. 3. Ensure the device is Azure AD joined with 'dsregcmd /status'. 4. Sync the device via Settings > Accounts > Access work or school > Info > Sync. 5. Review IME logs in 'C:\\ProgramData\\Microsoft\\IntuneManagementExtension\\Logs'. 6. If Hybrid Azure AD Join, troubleshoot with 'https://learn.microsoft.com/en-us/azure/active-directory/devices/troubleshoot-hybrid-join-windows-current'. 7. Contact Microsoft Support."
+  },
+  {
+    "ErrorCode": "errorCode = 1605",
+    "Message": "ERROR_UNKNOWN_PRODUCT - The uninstall action targeted a product that is not currently installed.",
+    "Context": "Occurs when a Win32 app or MSI uninstall command tries to remove an app that isn’t present on the device, often due to outdated detection logic or misaligned assignments.",
+    "Solution": "1. Open Intune > Apps > All Apps > [App] > Properties and verify the uninstall command. 2. Confirm detection rules actually identify whether the product is installed. 3. Avoid running uninstall scripts blindly—add a check to confirm the product or MSI ProductCode exists. 4. Consider updating the detection method (registry, file, MSI) to avoid false uninstall attempts. 5. Reassign or repackage the app with improved logic to prevent this failure."
+  },
+  {
+    "ErrorCode": "errorCode = 87",
+    "Message": "ERROR_INVALID_PARAMETER - An invalid command-line argument was passed to the installer.",
+    "Context": "Usually caused by a typo, malformed command, or unsupported parameter in the install/uninstall string for a Win32 or MSI app deployed via Intune.",
+    "Solution": "1. In Intune, navigate to Apps > [App Name] > Properties > Program, and review the install/uninstall commands. 2. Remove or fix unsupported switches or misplaced quotes. 3. Test the full command locally in an elevated Command Prompt or PowerShell window. 4. Refer to vendor documentation to validate the proper syntax and arguments. 5. After correction, sync policies again or trigger remediation by restarting the Intune Management Extension service."
+  },
+  {
+    "ErrorCode": "exitCode = 1602",
+    "Message": "ERROR_INSTALL_USEREXIT - The installation process was canceled by the user or system.",
+    "Context": "Typically occurs during Autopilot ESP or Intune app deployment when an installer is closed prematurely, times out, or encounters a blocking condition (e.g., reboot request or UI prompt).",
+    "Solution": "1. Ensure all installers are configured with silent flags (e.g., `/quiet`, `/norestart`) to prevent interactive prompts. 2. Check that no pre-existing version of the app causes unexpected behavior or conflicts. 3. Use custom wrapper scripts to detect and handle edge conditions. 4. Avoid deploying interactive apps during ESP—assign them after login instead. 5. Validate install logs under `C:\\ProgramData\\Microsoft\\IntuneManagementExtension\\Logs\\` and retest deployment."
+  },
+  {
+    "ErrorCode": "exitCode = 0",
+    "Message": "SUCCESS - The installation or script completed successfully.",
+    "Context": "The installer executed without errors and exited cleanly.",
+    "Solution": "No action required. You can confirm success via Intune app install status, local logs, or detection logic output."
   }
 ]

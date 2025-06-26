@@ -1,5 +1,5 @@
 # Intune/Autopilot Log Analyzer PowerShell Tool
-# Version: 5.3.6 (Restore Feature)
+# Version: 5.3.8 (HTML Generation Bugfix)
 # Author: MD FAYSAL MAHMUD (faysaliteng@gmail.com)
 # Enhanced with Gemini AI, unified error analysis, multi-file support, HTML export, and online search for missing entries
 
@@ -131,7 +131,7 @@ function Invoke-AIAnalysis {
     Write-Host "Connecting to $Provider endpoint....." -ForegroundColor Cyan
     Write-Host "Analyzing with AI: Intune Enrollment Error '$Code'" -ForegroundColor Cyan
     
-    $apiKeyVarName = "apiKey_$Provider"
+    $apiKeyVarName = "apiKey_$provider"
     if (-not (Get-Variable -Name $apiKeyVarName -Scope Global -ErrorAction SilentlyContinue)) {
         $keyPath = Join-Path $ScriptDir "${Provider}_key.txt"
         if (Test-Path $keyPath) {
@@ -223,6 +223,9 @@ $Excerpt
 function Export-LogAnalysisToHtml {
     param([hashtable]$AnalysisResults, [string]$OutputPath)
     $htmlPath = Join-Path $OutputPath ("LogAnalysis_$(Get-Date -Format 'yyyyMMdd_HHmmss').html")
+    
+    # *** CORRECTED: Professional HTML Template ***
+    # This entire block is a single Here-String. All variables are expanded within it.
     $body = @"
 <!DOCTYPE html>
 <html lang="en">
@@ -230,74 +233,199 @@ function Export-LogAnalysisToHtml {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Intune Log Analysis Report</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f8f9fa; }
-        .container { max-width: 1200px; margin: 20px auto; }
-        h1 { color: #007bff; }
-        .error-card { margin-bottom: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .error-header { background-color: #343a40; color: white; padding: 10px; border-radius: 8px 8px 0 0; }
-        .error-body { padding: 15px; }
-        .error-code { font-weight: bold; color: #dc3545; }
-        .solutions-list { margin-top: 10px; padding-left: 20px; }
-        pre { white-space: pre-wrap; word-wrap: break-word; background-color: #f8f9fa; padding: 10px; border-radius: 4px; font-family: Consolas, 'Courier New', monospace; border: 1px solid #eee; }
-        .no-data { color: #dc3545; font-weight: bold; }
+        :root {
+            --bs-blue: #0d6efd; --bs-indigo: #6610f2; --bs-purple: #6f42c1; --bs-pink: #d63384; --bs-red: #dc3545; --bs-orange: #fd7e14; --bs-yellow: #ffc107; --bs-green: #198754; --bs-teal: #20c997; --bs-cyan: #0dcaf0; --bs-white: #fff; --bs-gray: #6c757d; --bs-gray-dark: #343a40; --bs-primary: #0d6efd; --bs-secondary: #6c757d; --bs-success: #198754; --bs-info: #0dcaf0; --bs-warning: #ffc107; --bs-danger: #dc3545; --bs-light: #f8f9fa; --bs-dark: #212529;
+            --primary-rgb: 13, 110, 253; --secondary-rgb: 108, 117, 125; --success-rgb: 25, 135, 84; --info-rgb: 13, 202, 240; --warning-rgb: 255, 193, 7; --danger-rgb: 220, 53, 69; --light-rgb: 248, 249, 250; --dark-rgb: 33, 37, 41;
+            --font-family-sans-serif: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+            --background-color: #f0f2f5;
+            --card-background: #ffffff;
+            --text-color: #495057;
+            --heading-color: #212529;
+            --border-color: #dee2e6;
+            --shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        body {
+            font-family: var(--font-family-sans-serif);
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+        .container { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
+        .report-header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px;
+            background-color: var(--card-background);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+        }
+        .report-header h1 {
+            color: var(--heading-color);
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .report-header p {
+            color: var(--bs-secondary);
+            font-size: 1.1rem;
+        }
+        .section-title {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: var(--heading-color);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--border-color);
+        }
+        .error-card {
+            background-color: var(--card-background);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+        .error-header {
+            background-color: var(--bs-dark);
+            color: var(--bs-light);
+            padding: 15px 20px;
+            font-weight: 600;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+        }
+        .error-header-icon {
+            margin-right: 12px;
+            font-size: 1.5rem;
+        }
+        .error-body { padding: 20px; }
+        .detail-block { margin-bottom: 20px; }
+        .detail-block:last-child { margin-bottom: 0; }
+        .detail-block h5 {
+            font-weight: 600;
+            color: var(--heading-color);
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+        .solutions-list {
+            list-style-type: decimal;
+            padding-left: 20px;
+            margin: 0;
+        }
+        .solutions-list li {
+            margin-bottom: 8px;
+            padding-left: 5px;
+        }
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            background-color: var(--background-color);
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', Courier, monospace;
+            border: 1px solid var(--border-color);
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .badge { display: inline-block; padding: .35em .65em; font-size: .75em; font-weight: 700; line-height: 1; color: #fff; text-align: center; white-space: nowrap; vertical-align: baseline; border-radius: .375rem; }
+        .badge-danger { background-color: var(--bs-danger); }
+        .footer { text-align: center; margin-top: 40px; color: var(--bs-secondary); font-size: 0.9em; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1 class="text-center my-4">Intune Log Analysis Report</h1>
-        <p><strong>Generated on:</strong> $(Get-Date)</p>
+        <div class="report-header">
+            <h1>Intune Log Analysis Report</h1>
+            <p>Generated on: $(Get-Date)</p>
+        </div>
 "@
-    if ($AnalysisResults.DatabaseMatches.Count -gt 0) {
-        $body += "<h2>Offline Database Analysis</h2>"
+    
+    # Helper function to sanitize text for HTML
+    function Sanitize-ForHtml {
+        param([string]$Text)
+        return $Text -replace '&', '&amp;' -replace '<', '&lt;' -replace '>', '&gt;'
     }
-    foreach ($key in $AnalysisResults.DatabaseMatches.Keys) {
-        $dbEntry = $AnalysisResults.DatabaseMatches[$key]
-        $dbMatch = $dbEntry.Message -replace '<','&lt;' -replace '>','&gt;'
-        $solutionsHtml = '<span class="no-data">N/A</span>'
 
-        $solutionString = $dbEntry.Solution -replace '\s+(?=\d+\.)', "`n"
-        $solutions = $solutionString.Split("`n") | Where-Object { $_ -match '\S' }
+    # Function to create an HTML card for an error
+    # This is defined outside the Here-String to avoid parsing issues
+    function New-HtmlErrorCard {
+        param([string]$Key, [string]$Type, [string]$Description, [array]$Solutions, [string]$Context)
 
-        if ($solutions) {
+        $headerIcon = if ($Type -eq 'AI') { '&#129504;' } else { '&#128190;' } # Brain and Floppy Disk emoji HTML codes
+        $sanitizedContext = if ($Context) { Sanitize-ForHtml -Text $Context } else { 'N/A' }
+        $sanitizedDescription = Sanitize-ForHtml -Text $Description
+        $sanitizedKey = Sanitize-ForHtml -Text $Key
+
+        $solutionsHtml = ""
+        if ($Solutions) {
             $solutionsHtml = "<ol class='solutions-list'>"
-            foreach ($solution in $solutions) {
-                $solutionText = $solution.Trim() -replace '^\d+\.\s*', ''
-                $solutionText = $solutionText -replace '<','&lt;' -replace '>','&gt;'
-                $solutionsHtml += "<li>$solutionText</li>"
+            foreach ($solution in $Solutions) {
+                $solutionsHtml += "<li>$(Sanitize-ForHtml -Text $solution.Trim())</li>"
             }
             $solutionsHtml += "</ol>"
+        } else {
+            $solutionsHtml = "<p>No specific solutions found.</p>"
         }
-        
-        $body += @"
-            <div class="error-card">
-                <div class="error-header"><h3 class="error-code">[Offline Database Match for '$($dbEntry.ErrorCode)']</h3></div>
-                <div class="error-body">
-                    <p><strong>Description:</strong> $dbMatch</p>
-                    <p><strong>Recommended Solutions:</strong></p>
+
+        return @"
+        <div class="error-card">
+            <div class="error-header"><span class="error-header-icon">$headerIcon</span> <span class="badge badge-danger" style="margin-left:auto;">$sanitizedKey</span></div>
+            <div class="error-body">
+                <div class="detail-block">
+                    <h5>Description</h5>
+                    <p>$sanitizedDescription</p>
+                </div>
+                <div class="detail-block">
+                    <h5>Recommended Solutions</h5>
                     $solutionsHtml
                 </div>
-            </div>
-"@
-    }
-    if ($AnalysisResults.AIAnalyses.Keys.Count -gt 0) {
-        $body += "<h2 class='mt-4'>AI Analysis</h2>"
-    }
-    foreach ($key in $AnalysisResults.AIAnalyses.Keys) {
-        $aiContent = $AnalysisResults.AIAnalyses[$key] -replace '<','&lt;' -replace '>','&gt;'
-        $body += @"
-            <div class="error-card">
-                <div class="error-header"><h3 class="error-code">[AI Analysis for '$key']</h3></div>
-                <div class="error-body">
-                    <pre>$aiContent</pre>
+                <div class="detail-block">
+                    <h5>Original Log Context</h5>
+                    <pre>$sanitizedContext</pre>
                 </div>
             </div>
+        </div>
 "@
     }
+
+    if ($AnalysisResults.DatabaseMatches.Count -gt 0) {
+        $body += "<h2 class='section-title'>Offline Database Analysis</h2>"
+        foreach ($key in $AnalysisResults.DatabaseMatches.Keys) {
+            $dbEntry = $AnalysisResults.DatabaseMatches[$key]
+            $solutionString = $dbEntry.Solution -replace '\s+(?=\d+\.)', "`n"
+            $solutionsArray = $solutionString.Split("`n") | Where-Object { $_ -match '\S' } | ForEach-Object { $_.Trim() -replace '^\d+\.\s*' }
+            $logContext = $AnalysisResults.Contexts[$key]
+            $body += New-HtmlErrorCard -Key $key -Type 'DB' -Description $dbEntry.Message -Solutions $solutionsArray -Context $logContext
+        }
+    }
+
+    if ($AnalysisResults.AIAnalyses.Keys.Count -gt 0) {
+        $body += "<h2 class='section-title'>AI Analysis</h2>"
+        foreach ($key in $AnalysisResults.AIAnalyses.Keys) {
+            $aiResult = $AnalysisResults.AIAnalyses[$key]
+            # Parse the AI response
+            $description = ''
+            $solutionsArray = @()
+            if ($aiResult -match '(?sm)Description:(.*?)Recommended Solutions:(.*)') {
+                $description = $Matches[1].Trim()
+                $solutionsRaw = $Matches[2].Trim()
+                $solutionsArray = $solutionsRaw.Split("`n") | Where-Object { $_ -match '\S' } | ForEach-Object { $_.Trim() -replace '^\d+\.\s*' }
+            } else {
+                # If parsing fails, use the whole result as the description
+                $description = "Could not parse AI response into sections. Full response is shown below."
+                $solutionsArray = @($aiResult)
+            }
+            $logContext = $AnalysisResults.Contexts[$key]
+            $body += New-HtmlErrorCard -Key $key -Type 'AI' -Description $description -Solutions $solutionsArray -Context $logContext
+        }
+    }
+
     $body += @"
+        <div class="footer">
+            <p>Generated by Intune Log Analyzer v5.3.8</p>
+        </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
 "@
@@ -345,7 +473,7 @@ function Manage-AIProviders {
 # -----------------------------------
 function Main-Menu {
     while ($true) {
-        Write-Host "`n=== Intune Log Analyzer Menu (v5.3.6 Gemini Enhanced) ===" -ForegroundColor Cyan
+        Write-Host "`n=== Intune Log Analyzer Menu (v5.3.8 Gemini Enhanced) ===" -ForegroundColor Cyan
         Write-Host "1. Analyze Log File (Offline DB & optional online search)"
         Write-Host "2. Analyze with AI Only (Directly analyze log with selected AI)"
         Write-Host "3. Select AI Model (Current: $($global:model))"
@@ -359,21 +487,9 @@ function Main-Menu {
                 $data = Parse-LogFile -FilePath $LogFilePath
                 if (-not $data) { continue }
 
-                # *** THIS IS THE RESTORED FEATURE ***
-                # Show detection summary before asking for user input
                 Write-Host "`n=== Detection Results ===" -ForegroundColor Cyan
-                if ($data.Codes.Keys.Count -gt 0) {
-                    Write-Host "Detected Error Codes:"
-                    $data.Codes.Keys | ForEach-Object { Write-Host "- $_" }
-                } else {
-                    Write-Host "No error codes detected."
-                }
-                if ($data.Keywords.Keys.Count -gt 0) {
-                    Write-Host "`nDetected Error Keywords:"
-                    $data.Keywords.Keys | ForEach-Object { Write-Host "- $_" }
-                } else {
-                    Write-Host "No error keywords detected."
-                }
+                if ($data.Codes.Keys.Count -gt 0) { Write-Host "Detected Error Codes:"; $data.Codes.Keys | ForEach-Object { Write-Host "- $_" } } else { Write-Host "No error codes detected." }
+                if ($data.Keywords.Keys.Count -gt 0) { Write-Host "`nDetected Error Keywords:"; $data.Keywords.Keys | ForEach-Object { Write-Host "- $_" } } else { Write-Host "No error keywords detected." }
 
                 $selected = Read-Host "`nEnter error code/keyword or press Enter to analyze all detected items"
                 if ([string]::IsNullOrWhiteSpace($selected)) {
@@ -382,11 +498,9 @@ function Main-Menu {
                     $targets += $data.Keywords.Keys | ForEach-Object { [PSCustomObject]@{ Type = 'Keyword'; Value = $_ } }
                 } else {
                     $selTrim = $selected.Trim('"')
-                    if ($data.Codes.ContainsKey($selTrim)) {
-                        $targets = @([PSCustomObject]@{ Type = 'Code'; Value = $selTrim })
-                    } elseif ($data.Keywords.ContainsKey($selTrim)) {
-                        $targets = @([PSCustomObject]@{ Type = 'Keyword'; Value = $selTrim })
-                    } else { Write-Warning "Specified item '$selTrim' not found."; continue }
+                    if ($data.Codes.ContainsKey($selTrim)) { $targets = @([PSCustomObject]@{ Type = 'Code'; Value = $selTrim }) } 
+                    elseif ($data.Keywords.ContainsKey($selTrim)) { $targets = @([PSCustomObject]@{ Type = 'Keyword'; Value = $selTrim }) } 
+                    else { Write-Warning "Specified item '$selTrim' not found."; continue }
                 }
 
                 $outputPath        = Join-Path $OutputDir "LogAnalysis_$(Get-Date -Format 'yyyyMMdd_HHmmss').txt"
@@ -394,6 +508,7 @@ function Main-Menu {
                 $analysisResults   = [ordered]@{ Contexts = @{}; DatabaseMatches = @{}; AIAnalyses = @{} }
 
                 foreach ($target in $targets) {
+                    $analysisResults.Contexts[$target.Value] = if ($target.Type -eq 'Code') { ($data.Codes[$target.Value] -join "`n") } else { ($data.Keywords[$target.Value] -join "`n") }
                     $dbEntry = Find-ErrorInDatabase -ErrorInput $target.Value
                     if ($dbEntry) {
                         $analysisResults.DatabaseMatches[$target.Value] = $dbEntry
@@ -402,7 +517,6 @@ function Main-Menu {
                         Write-Host "[Offline Database Match for '$($dbEntry.ErrorCode)']"
                         Write-Host "Description: $($dbEntry.Message)`n"
                         Write-Host "Recommended Solutions:"
-
                         $solutionString = $dbEntry.Solution -replace '\s+(?=\d+\.)', "`n"
                         $solutions = $solutionString.Split("`n") | Where-Object { $_ -match '\S' }
                         $textOutputSolutions = @()
@@ -413,29 +527,19 @@ function Main-Menu {
                             $textOutputSolutions += $numberedLine
                         }
                         Write-Host $border -ForegroundColor Green
-                        
                         Add-Content $outputPath "`n$border`n[Offline Database Match for '$($dbEntry.ErrorCode)']`nDescription: $($dbEntry.Message)`n`nRecommended Solutions:"
                         $textOutputSolutions | Out-File -FilePath $outputPath -Append -Encoding utf8
                         Add-Content $outputPath "`n$border"
-
                     } else { Write-Host "`nWARNING: No offline data found for $($target.Value)" -ForegroundColor Yellow; $missingItems += $target.Value }
                 }
-
-                if ($missingItems.Count -gt 0) {
-                    if ((Read-Host "`nDo you want to search Online for the missing entries? (Y/N)") -match '^[Yy]$') {
-                        Write-Host "Opening browser tabs to search..."
-                        $missingItems | Select-Object -Unique | ForEach-Object { Start-Process "https://www.google.com/search?q=Intune%20$([uri]::EscapeDataString($_))" }
-                    }
-                }
+                if ($missingItems.Count -gt 0) { if ((Read-Host "`nDo you want to search Online for the missing entries? (Y/N)") -match '^[Yy]$') { $missingItems | Select-Object -Unique | ForEach-Object { Start-Process "https://www.google.com/search?q=Intune%20$([uri]::EscapeDataString($_))" } } }
                 Export-LogAnalysisToHtml -AnalysisResults $analysisResults -OutputPath $OutputDir
             }
 
             '2' { # AI Only Analysis
                 $LogFilePath = Read-Host 'Enter path to log file for AI-only analysis'
                 $data = Parse-LogFile -FilePath $LogFilePath
-                if (-not $data -or ($data.Codes.Count -eq 0 -and $data.Keywords.Count -eq 0)) {
-                    Write-Warning "No errors detected in the log file or file not found."; continue 
-                }
+                if (-not $data -or ($data.Codes.Count -eq 0 -and $data.Keywords.Count -eq 0)) { Write-Warning "No errors detected in the log file or file not found."; continue }
 
                 $providerChoice = Select-AIProvider
                 if ($providerChoice -notmatch '^[1-3]$') { Write-Warning "Invalid selection. AI analysis canceled."; continue }
@@ -445,11 +549,10 @@ function Main-Menu {
                 $analysisResults = [ordered]@{ Contexts = @{}; DatabaseMatches = @{}; AIAnalyses = @{} }
                 
                 $allTargets = @() + $data.Codes.Keys + $data.Keywords.Keys
-
                 foreach ($item in $allTargets) {
                     $excerpt = ""
-                    if ($data.Codes.ContainsKey($item)) { $excerpt = ($data.Codes[$item] -join "`n") } 
-                    else { $excerpt = ($data.Keywords[$item] -join "`n") }
+                    if ($data.Codes.ContainsKey($item)) { $excerpt = ($data.Codes[$item] -join "`n") } else { $excerpt = ($data.Keywords[$item] -join "`n") }
+                    $analysisResults.Contexts[$item] = $excerpt
                     $excerpt = $excerpt.Substring(0, [Math]::Min(2000, $excerpt.Length))
 
                     $aiResult = Invoke-AIAnalysis -Excerpt $excerpt -Code $item -Provider $aiProvider
@@ -470,8 +573,7 @@ function Main-Menu {
             '3' { # Select Model
                 Write-Host "Select AI Model. Current is $($global:model)"
                 $m = Read-Host 'Enter model (e.g., gemini-2.0-flash, gpt-4, gpt-3.5-turbo)'
-                if (-not [string]::IsNullOrWhiteSpace($m)) { $global:model = $m; Write-Host "Model set to: $m" -ForegroundColor Green } 
-                else { Write-Warning "Model name cannot be empty." }
+                if (-not [string]::IsNullOrWhiteSpace($m)) { $global:model = $m; Write-Host "Model set to: $m" -ForegroundColor Green } else { Write-Warning "Model name cannot be empty." }
             }
 
             '4' { Manage-AIProviders }

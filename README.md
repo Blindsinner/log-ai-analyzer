@@ -1,211 +1,208 @@
 # Intune/Autopilot Log Analyzer PowerShell Tool
 
-**Version**: 5.2  
+**Version**: 5.3.6
 **Author**: MD Faysal Mahmud
 
-**Purpose**: A PowerShell tool to detect and analyze Intune/Autopilot enrollment errors using an offline error database, user-defined error keywords, and optional AI-powered diagnostics. Features unified error analysis, multi-file support, responsive HTML export, and online search for missing entries.
+**Purpose**: A PowerShell tool to detect and analyze Intune/Autopilot enrollment errors. It uses a local offline error database, user-defined keywords (`errorcloud.txt`), and optional AI-powered diagnostics with Google Gemini as the primary provider. Key features include unified error analysis, multi-provider AI support (Gemini, OpenAI, Azure), responsive HTML export, and consistent, clean output formatting for all analysis types.
 
 ## Table of Contents
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
 - [First-Time Setup](#first-time-setup)
 - [Configuration](#configuration)
+  - [Getting a Free Google Gemini API Key](#getting-a-free-google-gemini-api-key)
   - [Error-Cloud Keywords](#error-cloud-keywords)
   - [Offline Error Database](#offline-error-database)
   - [API Keys](#api-keys)
   - [File Locations](#file-locations)
 - [Running the Tool](#running-the-tool)
 - [Main Menu Options](#main-menu-options)
-  - [1. Analyze Log File](#1-analyze-log-file)
-  - [2. Set or Update OpenAI API Key](#2-set-or-update-openai-api-key)
+  - [1. Analyze Log File (Offline DB & optional online search)](#1-analyze-log-file-offline-db--optional-online-search)
+  - [2. Analyze with AI Only](#2-analyze-with-ai-only)
   - [3. Select AI Model](#3-select-ai-model)
-  - [4. Analyze with AI Only](#4-analyze-with-ai-only)
-  - [5. Manage AI Providers](#5-manage-ai-providers)
-  - [6. Exit](#6-exit)
+  - [4. Manage AI Providers & API Keys](#4-manage-ai-providers--api-keys)
+  - [5. Exit](#5-exit)
 - [Parse-LogFile Function](#parse-logfile-function)
-- [Error Database](#error-database)
+- [Output Formats](#output-formats)
 - [Output Files](#output-files)
 - [Troubleshooting](#troubleshooting)
 - [License](#license)
 
 ## Prerequisites
 - Windows PowerShell (v5.1 or later)
-- Internet connectivity for AI analysis or online search (optional)
-- (Optional) API keys for OpenAI, Azure OpenAI, or Anthropic (Claude) for AI diagnostics
-- Log files (e.g., `IntuneManagementExtension.log`)
-- `error_db.json` and `errorcloud.txt` in the script’s root directory
+- Internet connectivity for AI analysis or online search features.
+- (Optional) API keys for Google (Gemini), OpenAI, or Azure OpenAI for AI diagnostics.
+- Log files to be analyzed (e.g., `IntuneManagementExtension.log`).
+- `error_db.json` and `errorcloud.txt` must be present in the script’s root directory.
 
 ## Installation
-1. Clone or download the repository containing `LogAnalyzer2.ps1`, `errorcloud.txt`, and `error_db.json`.
-2. Open a PowerShell prompt as Administrator.
-3. Navigate to the script folder:
-   ```powershell
-   cd "C:\Path\To\LogAnalyzerFolder"
-   ```
+1.  Clone or download the repository containing the script (`.ps1`), `errorcloud.txt`, and `error_db.json`.
+2.  Place all files in a single folder (e.g., `C:\Scripts\LogAnalyzer`).
+3.  Open a PowerShell prompt.
+4.  Navigate to the script's folder:
+    ```powershell
+    cd "C:\Scripts\LogAnalyzer"
+    ```
 
 ## First-Time Setup
-PowerShell’s execution policy may block scripts. To allow `LogAnalyzer2.ps1`:
+PowerShell’s execution policy may block scripts from running. To allow the script:
 
-1. **Check Execution Policy**:
-   ```powershell
-   Get-ExecutionPolicy
-   ```
-   If `Restricted`, scripts are blocked.
+1.  **Check Execution Policy**:
+    ```powershell
+    Get-ExecutionPolicy
+    ```
+    If it returns `Restricted`, scripts are blocked.
 
-2. **Allow the Script**:
-   - **Option 1: Unblock the Script File** (Recommended):
-     ```powershell
-     Unblock-File .\LogAnalyzer2.ps1
-     ```
-   - **Option 2: Change Execution Policy**:
-     ```powershell
-     Set-ExecutionPolicy -Scope LocalMachine -ExecutionPolicy RemoteSigned -Force
-     ```
-   - **Option 3: Bypass for a Single Session**:
-     ```powershell
-     powershell -ExecutionPolicy Bypass -File .\LogAnalyzer2.ps1
-     ```
+2.  **Allow the Script**:
+    * **Option 1: Unblock the Script File (Recommended)**:
+        ```powershell
+        Unblock-File .\TheScriptName.ps1
+        ```
+    * **Option 2: Bypass for a Single Session**:
+        ```powershell
+        powershell -ExecutionPolicy Bypass -File .\TheScriptName.ps1
+        ```
 
-**Note**: Changing the execution policy or unblocking files has security implications. Use trusted scripts and revert to `Restricted` (`Set-ExecutionPolicy Restricted`) if needed.
+**Note**: Modifying execution policies has security implications. Only run scripts from trusted sources.
 
 ## Configuration
 
+### Getting a Free Google Gemini API Key
+The AI features of this tool work best with a Google Gemini API key, which is available with a generous free tier.
+
+1.  **Go to Google AI Studio**: Navigate to [aistudio.google.com](https://aistudio.google.com/).
+2.  **Sign In**: Sign in with your Google account.
+3.  **Get API Key**: Click the `</> Get API key` button, usually located in the top-left or top-right corner.
+4.  **Create API Key**: Follow the prompts to create an API key in a new or existing project.
+5.  **Copy the Key**: Copy the generated API key. When you run the AI analysis in the script for the first time, it will prompt you to enter this key.
+
+The free tier is suitable for typical usage but has limits (e.g., requests per minute).
+
 ### Error-Cloud Keywords
-- `errorcloud.txt` (in the script’s root directory) contains comma-separated error keywords/phrases (e.g., "EnablePutWithTupleResult not found").
-- If missing, the script creates an empty `errorcloud.txt`. Populate it with keywords to detect in logs.
-- Edit the file to add or modify entries as needed.
+-   **File**: `errorcloud.txt` (must be in the script’s root directory).
+-   **Purpose**: Contains a comma-separated list of custom error keywords or phrases (e.g., "EnablePutWithTupleResult not found,timed out,failed to connect").
+-   The script will detect any line in the log that contains these keywords.
 
 ### Offline Error Database
-- `error_db.json` (in the root directory) contains error codes, descriptions, and solutions.
-- Ensure it’s present for offline analysis. The script reads it without modifying or moving it.
+-   **File**: `error_db.json` (must be in the root directory).
+-   **Purpose**: A JSON file containing known error codes, their descriptions, and recommended solutions. This allows for instant, offline analysis.
 
 ### API Keys
-- Save API keys in the root directory:
-  - `apikey.txt` (OpenAI)
-  - `azure_key.txt` (Azure OpenAI)
-  - `claude_key.txt` (Anthropic/Claude)
-- Alternatively, set/update keys via Main Menu (Options 2 or 5).
-- If a key is missing, the script prompts for it during AI analysis.
+-   API keys are used for the optional AI analysis features.
+-   The script will prompt you for a key the first time you use a specific AI provider. The key is then saved to a `.txt` file in the root directory for future use.
+-   **Key Files**:
+    -   `gemini_key.txt` (Google Gemini)
+    -   `openai_key.txt` (OpenAI)
+    -   `azure_key.txt` (Azure OpenAI)
+-   You can also add or update keys proactively using **Option 4** in the main menu.
 
 ### File Locations
-- **Root Directory** (where `LogAnalyzer2.ps1` is located, e.g., `C:\Scripts`):
-  - `error_db.json`: Offline error database.
-  - `errorcloud.txt`: User-provided error keywords.
-  - `apikey.txt`, `azure_key.txt`, `claude_key.txt`: API keys (if used).
-- **Analyzed Result** (subfolder, e.g., `C:\Scripts\Analyzed Result`, created automatically):
-  - `LogAnalysis_YYYYMMDD_HHMMSS.html`: Responsive HTML report with error details and solutions.
-  - `LogAnalysis_YYYYMMDD_HHMMSS.txt`: Text report with analysis results.
-  - `AIAnalysis_YYYYMMDD_HHMMSS.txt` (for AI-only analysis).
-
-The script does not create or move `error_db.json` or `errorcloud.txt` to `Analyzed Result`.
+-   **Root Directory** (where the `.ps1` script is located):
+    -   `error_db.json`: The offline error database.
+    -   `errorcloud.txt`: Your custom error keywords.
+    -   `gemini_key.txt`, `openai_key.txt`, `azure_key.txt`: Saved API keys.
+-   **Analyzed Result** (subfolder created automatically by the script):
+    -   This folder stores all generated `.html` and `.txt` reports.
 
 ## Running the Tool
-1. Navigate to the folder containing `LogAnalyzer2.ps1`:
-   ```powershell
-   cd "C:\Path\To\LogAnalyzerFolder"
-   ```
-   **Tip**: Copy the folder path from File Explorer and paste it into the command.
-2. Run the script:
-   ```powershell
-   .\LogAnalyzer2.ps1
-   ```
-3. The Main Menu appears:
-   ```
-   === Intune Log Analyzer Menu ===
-   1. Analyze Log File
-   2. Set or Update OpenAI API Key
-   3. Select AI Model (Current: gpt-4)
-   4. Analyze with AI Only
-   5. Manage AI Providers
-   6. Exit
-   Choose an option (1-6):
-   ```
+1.  Navigate to the script's folder in PowerShell.
+2.  Run the script:
+    ```powershell
+    .\TheScriptName.ps1
+    ```
+3.  The Main Menu will appear:
+    ```
+    === Intune Log Analyzer Menu (v5.3.6 Gemini Enhanced) ===
+    1. Analyze Log File (Offline DB & optional online search)
+    2. Analyze with AI Only (Directly analyze log with selected AI)
+    3. Select AI Model (Current: gemini-2.0-flash)
+    4. Manage AI Providers & API Keys
+    5. Exit
+    Choose an option (1-5):
+    ```
 
 ## Main Menu Options
 
-### 1. Analyze Log File
-- **Input**: Enter the path to a log file (e.g., `C:\Logs\IntuneManagementExtension.log`).
-- **Process**:
-  - Detects error codes (`0x…` hex codes) and keywords (from `errorcloud.txt`, phrases like `errorCode = 1234`, or contextual codes like `Exit code 1603`).
-  - Displays detected codes and keywords.
-  - Prompts to select a specific code/keyword or press Enter to analyze all.
-  - For each item:
-    - Matches against `error_db.json` for descriptions and solutions (e.g., `#1. Verify the policy...`).
-    - Extracts log context excerpts.
-    - Offers online search for unmatched items (opens browser tabs).
-- **Output**:
-  - Text report: `Analyzed Result\LogAnalysis_YYYYMMDD_HHMMSS.txt`.
-  - HTML report: `Analyzed Result\LogAnalysis_YYYYMMDD_HHMMSS.html` (responsive, with solutions formatted as `#1.`, `#2.`, etc.).
+### 1. Analyze Log File (Offline DB & optional online search)
+-   **Input**: The path to a log file.
+-   **Process**:
+    1.  Parses the log file to detect error codes (`0x...`) and any keywords from your `errorcloud.txt`.
+    2.  Displays a **Detection Results** summary listing all found errors.
+    3.  Prompts you to select a specific error or press Enter to analyze all of them.
+    4.  For each selected error, it queries the local `error_db.json` and displays any matches in a clean, bordered format.
+    5.  For errors not found in the local database, it offers to launch a Google search in your browser.
+-   **Output**: A detailed `LogAnalysis_...txt` file and a responsive `LogAnalysis_...html` report are saved in the `Analyzed Result` folder.
 
-### 2. Set or Update OpenAI API Key
-- Prompts for and saves an OpenAI API key to `apikey.txt` in the root directory.
+### 2. Analyze with AI Only
+-   **Input**: The path to a log file and your choice of AI provider (Gemini, OpenAI, or Azure).
+-   **Process**:
+    1.  Detects all errors and keywords just like in Option 1.
+    2.  Skips the offline database search entirely.
+    3.  Sends each detected error and its log context to the selected AI provider for analysis.
+    4.  Displays the AI's response in a standardized, clean, bordered format.
+-   **Output**: An `AI_Analysis_...txt` report and a full `LogAnalysis_...html` report are saved in the `Analyzed Result` folder.
 
 ### 3. Select AI Model
-- Choose between:
-  - `gpt-4` (default)
-  - `gpt-3.5-turbo`
+-   Allows you to change the AI model used for analysis.
+-   **Default**: `gemini-2.0-flash`.
+-   You can enter other compatible models like `gpt-4` or `gpt-3.5-turbo`. The selected model will be used by the corresponding AI provider.
 
-### 4. Analyze with AI Only
-- **Input**: Enter the log file path and select an AI provider (OpenAI, Azure OpenAI, or Claude).
-- **Process**: Analyzes all detected codes and keywords using the selected AI provider, skipping `error_db.json`.
-- **Output**:
-  - Text report: `Analyzed Result\AIAnalysis_YYYYMMDD_HHMMSS.txt`.
-  - HTML report: `Analyzed Result\LogAnalysis_YYYYMMDD_HHMMSS_AI.html`.
+### 4. Manage AI Providers & API Keys
+-   A central menu for managing your AI provider API keys.
+-   You can add or update keys for Google (Gemini), OpenAI, and Azure OpenAI.
+-   Keys are saved to their respective `.txt` files in the root directory.
 
-### 5. Manage AI Providers
-- Add or update API keys for OpenAI, Azure OpenAI, or Anthropic (Claude).
-- Saves keys to respective files in the root directory.
-
-### 6. Exit
-- Closes the tool.
+### 5. Exit
+-   Closes the tool.
 
 ## Parse-LogFile Function
-Processes each log line to:
-- Extract `0x…` hex codes (4-8 digits).
-- Capture decimal phrases (e.g., `errorCode = 3399548929`).
-- Identify contextual codes (e.g., `Exit code 1618`, `Status code: 0x80070005`, `HRESULT 0x87D1041C`).
-- Match case-insensitive keywords from `errorcloud.txt`.
+This core function processes each line of a log file to find:
+-   Hexadecimal codes (e.g., `0x80070643`).
+-   Phrases containing error codes (e.g., `errorCode = 1603`).
+-   Contextual codes (e.g., `Exit code 1618`, `HRESULT 0x87D1041C`).
+-   Any case-insensitive keywords from `errorcloud.txt`.
 
-**Returns**: A hashtable with:
-- `Codes`: `<hex code>` → array of matching lines.
-- `Keywords`: `<phrase or keyword>` → array of matching lines.
+## Output Formats
+The script now enforces a standardized output format for both offline and AI analysis to ensure clarity and readability.
 
-## Error Database
-- **File**: `error_db.json` (root directory).
-- **Structure**:
-  - `ErrorCode`: Code or keyword (e.g., `0x80070643`, `EnablePutWithTupleResult not found`).
-  - `Message`: Description.
-  - `Solution`: Step-by-step fixes (e.g., `#1. Verify the policy...`).
-- Used for instant offline guidance.
+**Example Console Output:**
+
+======================================================================
+[AI Analysis for '0x80070643']
+
+Description: This is a fatal error during installation, often related to MSI packages, permissions, or corrupted installations.
+
+Recommended Solutions:
+
+Check the application install command in the Intune portal for syntax errors.
+
+Ensure the user or system has adequate permissions to the installation directory.
+
+Test the installation command manually on a test device with elevated privileges.
+
+Clear the CCM cache if the application was previously installed or failed.
+======================================================================
+
 
 ## Output Files
-- **Location**: `Analyzed Result` folder (e.g., `C:\Scripts\Analyzed Result`).
-- **Files**:
-  - `LogAnalysis_YYYYMMDD_HHMMSS.txt`: Text summary of analysis, including error codes, keywords, database matches, and solutions.
-  - `LogAnalysis_YYYYMMDD_HHMMSS.html`: Responsive HTML report with card-based layout, showing errors, context, database matches, and solutions (formatted as `#1.`, `#2.`, etc.).
-  - `AIAnalysis_YYYYMMDD_HHMMSS.txt`: AI-only analysis results (Option 4).
-  - `LogAnalysis_YYYYMMDD_HHMMSS_AI.html`: AI-only HTML report (Option 4).
+-   **Location**: All reports are saved in the `Analyzed Result` subfolder.
+-   **Files**:
+    -   `LogAnalysis_YYYYMMDD_HHMMSS.txt`: A text summary of the analysis.
+    -   `LogAnalysis_YYYYMMDD_HHMMSS.html`: A responsive HTML report with a card-based layout for each error, showing details and solutions.
+    -   `AI_Analysis_YYYYMMDD_HHMMSS.txt`: A text file containing only the results from the "Analyze with AI Only" option.
 
 ## Troubleshooting
-- **No Detections**:
-  - Verify `errorcloud.txt` contains relevant keywords (e.g., `EnablePutWithTupleResult not found`).
-  - Check log file path and permissions.
-- **Missing `error_db.json` or `errorcloud.txt`**:
-  - Ensure both files are in the root directory (e.g., `C:\Scripts`).
-  - If `errorcloud.txt` is missing, the script creates an empty one.
-- **AI Not Working**:
-  - Verify API key files in the root directory.
-  - Confirm network access to AI endpoints.
-- **Log File Not Found**:
-  - Remove stray quotes or use full UNC paths.
-- **HTML Report Issues**:
-  - Open in a modern browser to ensure responsiveness.
-  - Check `Analyzed Result` for the HTML file.
-- **Performance on Large Logs**:
-  - Prefilter logs with `Select-String`:
-    ```powershell
-    Select-String "error" C:\Logs\IntuneManagementExtension.log > filtered.log
-    ```
+-   **No Detections**:
+    -   Ensure your `errorcloud.txt` contains relevant keywords.
+    -   Verify the log file path is correct and accessible.
+-   **File Not Found Errors**:
+    -   Make sure `error_db.json` and `errorcloud.txt` are in the same folder as the script.
+-   **AI Not Working**:
+    -   Use **Option 4** to verify your API key is set correctly.
+    -   Check your internet connection and any firewalls that might block access to AI endpoints.
+-   **HTML Report Issues**:
+    -   Open the report in a modern web browser (Edge, Chrome, Firefox).
+    -   Confirm the file exists in the `Analyzed Result` folder.
 
 ## License
-Licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+Licensed under the MIT License.

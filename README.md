@@ -41,7 +41,7 @@
 3.  Open a PowerShell prompt.
 4.  Navigate to the script's folder:
     ```powershell
-    cd "C:\Scripts\LogAnalyzer"
+    cd "C:\Scripts\LogAnalyzer" //your LogAnalyzer2.ps1 folder
     ```
 
 ## First-Time Setup
@@ -56,11 +56,11 @@ PowerShell’s execution policy may block scripts from running. To allow the scr
 2.  **Allow the Script**:
     * **Option 1: Unblock the Script File (Recommended)**:
         ```powershell
-        Unblock-File .\TheScriptName.ps1
+        Unblock-File .\LogAnalyzer2.ps1
         ```
     * **Option 2: Bypass for a Single Session**:
         ```powershell
-        powershell -ExecutionPolicy Bypass -File .\TheScriptName.ps1
+        powershell -ExecutionPolicy Bypass -File .\LogAnalyzer2.ps1
         ```
 
 **Note**: Modifying execution policies has security implications. Only run scripts from trusted sources.

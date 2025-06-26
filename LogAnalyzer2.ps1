@@ -1,5 +1,5 @@
 # Intune/Autopilot Log Analyzer PowerShell Tool
-# Version: 5.3.8 (HTML Generation Bugfix)
+# Version: 5.3.9 (Universal Log Support including .evtx)
 # Author: MD FAYSAL MAHMUD (faysaliteng@gmail.com)
 # Enhanced with Gemini AI, unified error analysis, multi-file support, HTML export, and online search for missing entries
 
@@ -52,13 +52,33 @@ function Parse-LogFile {
         Write-Warning "Log file not found: $FilePath"
         return $null
     }
-    $lines    = Get-Content -Path $FilePath
+    
+    # *** NEW: Universal Log Reading Logic ***
+    $lines = @()
+    $fileExtension = [System.IO.Path]::GetExtension($FilePath)
+
+    try {
+        if ($fileExtension -eq '.evtx') {
+            Write-Host "Reading .evtx file. This may take a moment for large files..." -ForegroundColor Cyan
+            # Use Get-WinEvent for .evtx files and select the message part
+            $lines = Get-WinEvent -Path $FilePath -ErrorAction Stop | ForEach-Object { $_.Message }
+        } else {
+            # Use Get-Content for all other text-based files (.log, .txt, etc.)
+            $lines = Get-Content -Path $FilePath -ErrorAction Stop
+        }
+    } catch {
+        Write-Warning "Error reading log file '$FilePath': $_"
+        return $null
+    }
+    
+    Write-Host "Successfully read $($lines.Count) log entries." -ForegroundColor Green
+
     $codes    = @{}  # hashtable: hex code -> list of matching lines
     $keywords = @{}  # hashtable: keyword phrase -> list of matching lines
-
     $cloudTokens = Get-ErrorCloudTokens
 
     foreach ($l in $lines) {
+        if ([string]::IsNullOrWhiteSpace($l)) { continue }
         # 1) Match anything that looks like 0xXXXX or 0xXXXXXXXX
         foreach ($m in [regex]::Matches($l, '0x[0-9A-Fa-f]{4,8}\b')) {
             $hex = $m.Value
@@ -129,7 +149,7 @@ function Invoke-AIAnalysis {
         [string]$Provider = 'gemini'
     )
     Write-Host "Connecting to $Provider endpoint....." -ForegroundColor Cyan
-    Write-Host "Analyzing with AI: Intune Enrollment Error '$Code'" -ForegroundColor Cyan
+    Write-Host "Analyzing with AI: Log Error '$Code'" -ForegroundColor Cyan
     
     $apiKeyVarName = "apiKey_$provider"
     if (-not (Get-Variable -Name $apiKeyVarName -Scope Global -ErrorAction SilentlyContinue)) {
@@ -151,7 +171,7 @@ function Invoke-AIAnalysis {
     }
 
     $strictPrompt = @"
-You are an expert IT helpdesk technician. Analyze the Intune error below and provide a response STRICTLY in the following format.
+You are an expert IT helpdesk technician. Analyze the IT log error below and provide a response STRICTLY in the following format.
 Do NOT use any other text, commentary, or markdown like bolding or asterisks.
 
 Description: [Provide a concise, one-sentence description of the error code in the context of the log.]
@@ -224,20 +244,17 @@ function Export-LogAnalysisToHtml {
     param([hashtable]$AnalysisResults, [string]$OutputPath)
     $htmlPath = Join-Path $OutputPath ("LogAnalysis_$(Get-Date -Format 'yyyyMMdd_HHmmss').html")
     
-    # *** CORRECTED: Professional HTML Template ***
-    # This entire block is a single Here-String. All variables are expanded within it.
     $body = @"
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Intune Log Analysis Report</title>
+    <title>Log Analysis Report</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --bs-blue: #0d6efd; --bs-indigo: #6610f2; --bs-purple: #6f42c1; --bs-pink: #d63384; --bs-red: #dc3545; --bs-orange: #fd7e14; --bs-yellow: #ffc107; --bs-green: #198754; --bs-teal: #20c997; --bs-cyan: #0dcaf0; --bs-white: #fff; --bs-gray: #6c757d; --bs-gray-dark: #343a40; --bs-primary: #0d6efd; --bs-secondary: #6c757d; --bs-success: #198754; --bs-info: #0dcaf0; --bs-warning: #ffc107; --bs-danger: #dc3545; --bs-light: #f8f9fa; --bs-dark: #212529;
-            --primary-rgb: 13, 110, 253; --secondary-rgb: 108, 117, 125; --success-rgb: 25, 135, 84; --info-rgb: 13, 202, 240; --warning-rgb: 255, 193, 7; --danger-rgb: 220, 53, 69; --light-rgb: 248, 249, 250; --dark-rgb: 33, 37, 41;
             --font-family-sans-serif: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
             --background-color: #f0f2f5;
             --card-background: #ffffff;
@@ -246,88 +263,22 @@ function Export-LogAnalysisToHtml {
             --border-color: #dee2e6;
             --shadow: 0 4px 6px rgba(0,0,0,0.05);
         }
-        body {
-            font-family: var(--font-family-sans-serif);
-            background-color: var(--background-color);
-            color: var(--text-color);
-            line-height: 1.6;
-        }
+        body { font-family: var(--font-family-sans-serif); background-color: var(--background-color); color: var(--text-color); line-height: 1.6; }
         .container { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
-        .report-header {
-            text-align: center;
-            margin-bottom: 40px;
-            padding: 20px;
-            background-color: var(--card-background);
-            border-radius: 12px;
-            box-shadow: var(--shadow);
-        }
-        .report-header h1 {
-            color: var(--heading-color);
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-        .report-header p {
-            color: var(--bs-secondary);
-            font-size: 1.1rem;
-        }
-        .section-title {
-            font-size: 1.75rem;
-            font-weight: 600;
-            color: var(--heading-color);
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid var(--border-color);
-        }
-        .error-card {
-            background-color: var(--card-background);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            box-shadow: var(--shadow);
-            margin-bottom: 25px;
-            overflow: hidden;
-        }
-        .error-header {
-            background-color: var(--bs-dark);
-            color: var(--bs-light);
-            padding: 15px 20px;
-            font-weight: 600;
-            font-size: 1.2rem;
-            display: flex;
-            align-items: center;
-        }
-        .error-header-icon {
-            margin-right: 12px;
-            font-size: 1.5rem;
-        }
+        .report-header { text-align: center; margin-bottom: 40px; padding: 20px; background-color: var(--card-background); border-radius: 12px; box-shadow: var(--shadow); }
+        .report-header h1 { color: var(--heading-color); font-weight: 700; margin-bottom: 8px; }
+        .report-header p { color: var(--bs-secondary); font-size: 1.1rem; }
+        .section-title { font-size: 1.75rem; font-weight: 600; color: var(--heading-color); margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid var(--border-color); }
+        .error-card { background-color: var(--card-background); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: var(--shadow); margin-bottom: 25px; overflow: hidden; }
+        .error-header { background-color: var(--bs-dark); color: var(--bs-light); padding: 15px 20px; font-weight: 600; font-size: 1.2rem; display: flex; align-items: center; }
+        .error-header-icon { margin-right: 12px; font-size: 1.5rem; }
         .error-body { padding: 20px; }
         .detail-block { margin-bottom: 20px; }
         .detail-block:last-child { margin-bottom: 0; }
-        .detail-block h5 {
-            font-weight: 600;
-            color: var(--heading-color);
-            font-size: 1rem;
-            margin-bottom: 10px;
-        }
-        .solutions-list {
-            list-style-type: decimal;
-            padding-left: 20px;
-            margin: 0;
-        }
-        .solutions-list li {
-            margin-bottom: 8px;
-            padding-left: 5px;
-        }
-        pre {
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            background-color: var(--background-color);
-            padding: 15px;
-            border-radius: 8px;
-            font-family: 'Courier New', Courier, monospace;
-            border: 1px solid var(--border-color);
-            max-height: 300px;
-            overflow-y: auto;
-        }
+        .detail-block h5 { font-weight: 600; color: var(--heading-color); font-size: 1rem; margin-bottom: 10px; }
+        .solutions-list { list-style-type: decimal; padding-left: 20px; margin: 0; }
+        .solutions-list li { margin-bottom: 8px; padding-left: 5px; }
+        pre { white-space: pre-wrap; word-wrap: break-word; background-color: var(--background-color); padding: 15px; border-radius: 8px; font-family: 'Courier New', Courier, monospace; border: 1px solid var(--border-color); max-height: 300px; overflow-y: auto; }
         .badge { display: inline-block; padding: .35em .65em; font-size: .75em; font-weight: 700; line-height: 1; color: #fff; text-align: center; white-space: nowrap; vertical-align: baseline; border-radius: .375rem; }
         .badge-danger { background-color: var(--bs-danger); }
         .footer { text-align: center; margin-top: 40px; color: var(--bs-secondary); font-size: 0.9em; }
@@ -336,23 +287,20 @@ function Export-LogAnalysisToHtml {
 <body>
     <div class="container">
         <div class="report-header">
-            <h1>Intune Log Analysis Report</h1>
+            <h1>Log Analysis Report</h1>
             <p>Generated on: $(Get-Date)</p>
         </div>
 "@
     
-    # Helper function to sanitize text for HTML
     function Sanitize-ForHtml {
         param([string]$Text)
         return $Text -replace '&', '&amp;' -replace '<', '&lt;' -replace '>', '&gt;'
     }
 
-    # Function to create an HTML card for an error
-    # This is defined outside the Here-String to avoid parsing issues
     function New-HtmlErrorCard {
         param([string]$Key, [string]$Type, [string]$Description, [array]$Solutions, [string]$Context)
 
-        $headerIcon = if ($Type -eq 'AI') { '&#129504;' } else { '&#128190;' } # Brain and Floppy Disk emoji HTML codes
+        $headerIcon = if ($Type -eq 'AI') { '&#129504;' } else { '&#128190;' } # Brain and Floppy Disk emoji
         $sanitizedContext = if ($Context) { Sanitize-ForHtml -Text $Context } else { 'N/A' }
         $sanitizedDescription = Sanitize-ForHtml -Text $Description
         $sanitizedKey = Sanitize-ForHtml -Text $Key
@@ -360,30 +308,17 @@ function Export-LogAnalysisToHtml {
         $solutionsHtml = ""
         if ($Solutions) {
             $solutionsHtml = "<ol class='solutions-list'>"
-            foreach ($solution in $Solutions) {
-                $solutionsHtml += "<li>$(Sanitize-ForHtml -Text $solution.Trim())</li>"
-            }
+            foreach ($solution in $Solutions) { $solutionsHtml += "<li>$(Sanitize-ForHtml -Text $solution.Trim())</li>" }
             $solutionsHtml += "</ol>"
-        } else {
-            $solutionsHtml = "<p>No specific solutions found.</p>"
-        }
+        } else { $solutionsHtml = "<p>No specific solutions found.</p>" }
 
         return @"
         <div class="error-card">
             <div class="error-header"><span class="error-header-icon">$headerIcon</span> <span class="badge badge-danger" style="margin-left:auto;">$sanitizedKey</span></div>
             <div class="error-body">
-                <div class="detail-block">
-                    <h5>Description</h5>
-                    <p>$sanitizedDescription</p>
-                </div>
-                <div class="detail-block">
-                    <h5>Recommended Solutions</h5>
-                    $solutionsHtml
-                </div>
-                <div class="detail-block">
-                    <h5>Original Log Context</h5>
-                    <pre>$sanitizedContext</pre>
-                </div>
+                <div class="detail-block"><h5>Description</h5><p>$sanitizedDescription</p></div>
+                <div class="detail-block"><h5>Recommended Solutions</h5>$solutionsHtml</div>
+                <div class="detail-block"><h5>Original Log Context</h5><pre>$sanitizedContext</pre></div>
             </div>
         </div>
 "@
@@ -404,27 +339,19 @@ function Export-LogAnalysisToHtml {
         $body += "<h2 class='section-title'>AI Analysis</h2>"
         foreach ($key in $AnalysisResults.AIAnalyses.Keys) {
             $aiResult = $AnalysisResults.AIAnalyses[$key]
-            # Parse the AI response
-            $description = ''
-            $solutionsArray = @()
+            $description = ''; $solutionsArray = @()
             if ($aiResult -match '(?sm)Description:(.*?)Recommended Solutions:(.*)') {
                 $description = $Matches[1].Trim()
                 $solutionsRaw = $Matches[2].Trim()
                 $solutionsArray = $solutionsRaw.Split("`n") | Where-Object { $_ -match '\S' } | ForEach-Object { $_.Trim() -replace '^\d+\.\s*' }
-            } else {
-                # If parsing fails, use the whole result as the description
-                $description = "Could not parse AI response into sections. Full response is shown below."
-                $solutionsArray = @($aiResult)
-            }
+            } else { $description = "Could not parse AI response into sections."; $solutionsArray = @($aiResult) }
             $logContext = $AnalysisResults.Contexts[$key]
             $body += New-HtmlErrorCard -Key $key -Type 'AI' -Description $description -Solutions $solutionsArray -Context $logContext
         }
     }
 
     $body += @"
-        <div class="footer">
-            <p>Generated by Intune Log Analyzer v5.3.8</p>
-        </div>
+        <div class="footer"><p>Generated by Universal Log Analyzer v5.3.9</p></div>
     </div>
 </body>
 </html>
@@ -473,7 +400,7 @@ function Manage-AIProviders {
 # -----------------------------------
 function Main-Menu {
     while ($true) {
-        Write-Host "`n=== Intune Log Analyzer Menu (v5.3.8 Gemini Enhanced) ===" -ForegroundColor Cyan
+        Write-Host "`n=== Universal Log Analyzer Menu (v5.3.9 Gemini Enhanced) ===" -ForegroundColor Cyan
         Write-Host "1. Analyze Log File (Offline DB & optional online search)"
         Write-Host "2. Analyze with AI Only (Directly analyze log with selected AI)"
         Write-Host "3. Select AI Model (Current: $($global:model))"
@@ -483,7 +410,7 @@ function Main-Menu {
 
         switch ($choice) {
             '1' { # Standard Analysis
-                $LogFilePath = Read-Host 'Enter path to log file (e.g., IntuneManagementExtension.log)'
+                $LogFilePath = Read-Host 'Enter path to log file (e.g., C:\Logs\Application.evtx or IntuneManagementExtension.log)'
                 $data = Parse-LogFile -FilePath $LogFilePath
                 if (-not $data) { continue }
 
@@ -513,18 +440,15 @@ function Main-Menu {
                     if ($dbEntry) {
                         $analysisResults.DatabaseMatches[$target.Value] = $dbEntry
                         $border = "=" * 70
-                        Write-Host "`n$border" -ForegroundColor Green
-                        Write-Host "[Offline Database Match for '$($dbEntry.ErrorCode)']"
-                        Write-Host "Description: $($dbEntry.Message)`n"
-                        Write-Host "Recommended Solutions:"
+                        Write-Host "`n$border" -ForegroundColor Green; Write-Host "[Offline Database Match for '$($dbEntry.ErrorCode)']"
+                        Write-Host "Description: $($dbEntry.Message)`n"; Write-Host "Recommended Solutions:"
                         $solutionString = $dbEntry.Solution -replace '\s+(?=\d+\.)', "`n"
                         $solutions = $solutionString.Split("`n") | Where-Object { $_ -match '\S' }
                         $textOutputSolutions = @()
                         for ($i = 0; $i -lt $solutions.Count; $i++) {
                             $cleanedLine = $solutions[$i].Trim() -replace '^\d+\.\s*'
                             $numberedLine = "$($i + 1). $cleanedLine"
-                            Write-Host $numberedLine
-                            $textOutputSolutions += $numberedLine
+                            Write-Host $numberedLine; $textOutputSolutions += $numberedLine
                         }
                         Write-Host $border -ForegroundColor Green
                         Add-Content $outputPath "`n$border`n[Offline Database Match for '$($dbEntry.ErrorCode)']`nDescription: $($dbEntry.Message)`n`nRecommended Solutions:"
@@ -537,7 +461,7 @@ function Main-Menu {
             }
 
             '2' { # AI Only Analysis
-                $LogFilePath = Read-Host 'Enter path to log file for AI-only analysis'
+                $LogFilePath = Read-Host 'Enter path to log file (e.g., C:\Logs\Application.evtx or IntuneManagementExtension.log)'
                 $data = Parse-LogFile -FilePath $LogFilePath
                 if (-not $data -or ($data.Codes.Count -eq 0 -and $data.Keywords.Count -eq 0)) { Write-Warning "No errors detected in the log file or file not found."; continue }
 
@@ -559,11 +483,8 @@ function Main-Menu {
                     if ($aiResult) {
                         $analysisResults.AIAnalyses[$item] = $aiResult
                         $border = "=" * 70
-                        Write-Host "`n$border" -ForegroundColor Magenta
-                        Write-Host "[AI Analysis for '$item']" -ForegroundColor Magenta
-                        Write-Host ""
-                        Write-Host $aiResult
-                        Write-Host $border -ForegroundColor Magenta
+                        Write-Host "`n$border" -ForegroundColor Magenta; Write-Host "[AI Analysis for '$item']" -ForegroundColor Magenta
+                        Write-Host ""; Write-Host $aiResult; Write-Host $border -ForegroundColor Magenta
                         Add-Content $outputPath "`n$border`n[AI Analysis for '$item']`n`n$aiResult`n$border"
                     }
                 }

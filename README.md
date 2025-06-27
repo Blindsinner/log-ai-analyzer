@@ -172,7 +172,7 @@ Enter path: C:\Logs\example.log
 ---
 
 ## 🔍 Main Menu Options
-```powershell
+
 === Universal Log Analyzer Menu (v6.0 Gemini Enhanced) ===
 1. Analyze Log File (Offline DB & optional online search)
 2. Analyze with AI Only (Directly analyze log with selected AI)
@@ -180,10 +180,6 @@ Enter path: C:\Logs\example.log
 4. Manage AI Providers & API Keys
 5. Exit
 Choose an option (1-5):
----
-
-
----
 
 ## 🧩 Core Logic
 

@@ -1,208 +1,230 @@
 # Universal Log Analyzer PowerShell Tool
 
-**Version**: 5.3.9
+**Version**: 6.0
 **Author**: MD Faysal Mahmud
+**Contribute**: We welcome contributions! Help improve this tool on [GitHub](https://github.com/Blindsinner/LogAnalyzer-Powershell-).
 
-**Purpose**: A powerful PowerShell tool to detect and analyze errors in various log formats, including standard text logs (`.log`, `.txt`) and Windows Event Logs (`.evtx`). It uses a local offline error database, user-defined keywords (`errorcloud.txt`), and optional AI-powered diagnostics with Google Gemini as the primary provider. Key features include unified error analysis, multi-provider AI support, and professional, responsive HTML reports.
+---
+
+## Overview
+
+The Universal Log Analyzer is a powerful, menu-driven PowerShell tool designed for IT professionals and system administrators to efficiently diagnose errors from a wide variety of sources. It excels at parsing complex log formats from environments like Microsoft Intune and Autopilot but is flexible enough for any log analysis task.
+
+It supports compressed archives (`.zip`), Microsoft Excel files (`.xlsx`), Windows Event Logs (`.evtx`, `.etl`), and all text-based formats (`.log`, `.txt`, `.html`, `.xml`). The tool uses a hybrid analysis model, combining a fast offline database for known errors, user-defined keyword detection, and advanced AI-powered diagnostics via Google Gemini, OpenAI, or Azure OpenAI.
+
+### Key Features
+-   **Universal File Support**: Natively analyzes `.zip`, `.xlsx`, `.xls`, `.evtx`, `.etl`, `.log`, `.txt`, `.html`, `.xml`, and any other text-readable file.
+-   **Recursive Archive Analysis**: Automatically extracts and analyzes the entire contents of `.zip` archives.
+-   **Multi-Provider AI Diagnostics**: Integrates with Google Gemini, OpenAI, and Azure OpenAI to provide expert-level descriptions and solutions for unknown errors.
+-   **Offline Error Database**: Delivers instant results for common errors using a local `error_db.json` file.
+-   **Custom Keyword Detection**: Allows users to define a custom list of keywords to search for via `errorcloud.txt`.
+-   **Professional Reports**: Generates detailed analysis reports in both plain text (`.txt`) and a beautifully styled, responsive HTML format.
+-   **Interactive Menu**: A user-friendly, menu-driven interface makes all features easily accessible.
+
+---
 
 ## Table of Contents
 - [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [First-Time Setup](#first-time-setup)
+- [Installation and Setup](#installation-and-setup)
 - [Configuration](#configuration)
   - [Getting a Free Google Gemini API Key](#getting-a-free-google-gemini-api-key)
   - [Error-Cloud Keywords](#error-cloud-keywords)
   - [Offline Error Database](#offline-error-database)
   - [API Keys](#api-keys)
-  - [File Locations](#file-locations)
+  - [File and Folder Structure](#file-and-folder-structure)
 - [Running the Tool](#running-the-tool)
 - [Main Menu Options](#main-menu-options)
-  - [1. Analyze Log File (Offline DB & optional online search)](#1-analyze-log-file-offline-db--optional-online-search)
-  - [2. Analyze with AI Only](#2-analyze-with-ai-only)
-  - [3. Select AI Model](#3-select-ai-model)
-  - [4. Manage AI Providers & API Keys](#4-manage-ai-providers--api-keys)
-  - [5. Exit](#5-exit)
-- [Parse-LogFile Function](#parse-logfile-function)
+- [The `Parse-LogFile` Function: How It Works](#the-parse-logfile-function-how-it-works)
 - [Output Formats](#output-formats)
-- [Output Files](#output-files)
 - [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
 - [License](#license)
 
+---
+
 ## Prerequisites
-- Windows PowerShell (v5.1 or later).
-- **Administrator privileges** may be required to read certain log files, especially `.evtx` files from secure locations.
-- Internet connectivity for AI analysis or online search features.
-- (Optional) API keys for Google (Gemini), OpenAI, or Azure OpenAI for AI diagnostics.
-- Log files to be analyzed (e.g., `Application.evtx`, `IntuneManagementExtension.log`, etc.).
-- `error_db.json` and `errorcloud.txt` must be present in the script’s root directory.
+-   Windows PowerShell 5.1 or later.
+-   **`ImportExcel` Module**: This is **required** for analyzing `.xlsx` and `.xls` files.
+-   **Administrator Privileges**: Recommended for installing modules and required for reading certain system logs (`.evtx`).
+-   **Internet Connectivity**: Required for AI-powered analysis and the online search feature.
+-   **Project Files**: The script (`LogAnalyzer.ps1`), `error_db.json`, and `errorcloud.txt` must all be located in the same directory.
 
-## Installation
-1.  Clone or download the repository containing the script (`LogAnalyzer.ps1`), `errorcloud.txt`, and `error_db.json`.
-2.  Place all files in a single folder (e.g., `C:\Scripts\LogAnalyzer`).
-3.  Open a PowerShell prompt.
-4.  Navigate to the script's folder:
+## Installation and Setup
+
+### Step 1: Get the Project Files
+Clone or download the entire project repository from [GitHub](https://github.com/Blindsinner/LogAnalyzer-Powershell-). Place all files (`LogAnalyzer.ps1`, `error_db.json`, `errorcloud.txt`) into a single folder (e.g., `C:\Tools\LogAnalyzer`).
+
+### Step 2: Install Dependencies
+The tool requires the `ImportExcel` module to read spreadsheet files. Open a PowerShell terminal **as an Administrator** and run the following command once:
+```powershell
+Install-Module -Name ImportExcel -AcceptLicense -Force
+```
+
+### Step 3: Allow the Script to Run
+By default, PowerShell's security policy may prevent scripts from running. The recommended way to permit this script is to "unblock" the file.
+
+1.  Open a regular (non-admin) PowerShell window.
+2.  Navigate to the directory where you saved the script.
     ```powershell
-    cd "C:\Scripts\LogAnalyzer"
+    cd C:\Tools\LogAnalyzer
     ```
-
-## First-Time Setup
-PowerShell’s execution policy may block scripts from running. To allow the script:
-
-1.  **Check Execution Policy**:
+3.  Run the `Unblock-File` cmdlet:
     ```powershell
-    Get-ExecutionPolicy
+    Unblock-File -Path .\LogAnalyzer.ps1
     ```
-    If it returns `Restricted`, scripts are blocked.
+Now, you can run the script without changing your system's global execution policy.
 
-2.  **Allow the Script**:
-    * **Option 1: Unblock the Script File (Recommended)**:
-        ```powershell
-        Unblock-File .\LogAnalyzer.ps1
-        ```
-    * **Option 2: Bypass for a Single Session**:
-        ```powershell
-        powershell -ExecutionPolicy Bypass -File .\LogAnalyzer.ps1
-        ```
-
-**Note**: Modifying execution policies has security implications. Only run scripts from trusted sources.
+---
 
 ## Configuration
 
 ### Getting a Free Google Gemini API Key
-The AI features of this tool work best with a Google Gemini API key, which is available with a generous free tier.
+The AI features work best with a Google Gemini API key, which has a generous free tier suitable for most users.
 
 1.  **Go to Google AI Studio**: Navigate to [aistudio.google.com](https://aistudio.google.com/).
-2.  **Sign In**: Sign in with your Google account.
-3.  **Get API Key**: Click the `</> Get API key` button.
-4.  **Create API Key**: Follow the prompts to create an API key in a new or existing project.
-5.  **Copy the Key**: Copy the generated API key. When you run the AI analysis in the script for the first time, it will prompt you to enter this key.
-
-The free tier is suitable for typical usage but has limits (e.g., requests per minute).
+2.  **Sign In** with your Google account.
+3.  Click the **`</> Get API key`** button.
+4.  **Create API Key**: Follow the prompts to create an API key.
+5.  **Copy the Key**: When you use an AI feature in the script for the first time, it will prompt you to enter this key.
 
 ### Error-Cloud Keywords
--   **File**: `errorcloud.txt` (must be in the script’s root directory).
--   **Purpose**: Contains a comma-separated list of custom error keywords or phrases (e.g., "failed to connect,timed out,access denied").
--   The script will detect any line in the log that contains these keywords.
+-   **File**: `errorcloud.txt`
+-   **Purpose**: Define a custom list of keywords you want the tool to find. The script will flag any line containing these terms.
+-   **Format**: A simple, comma-separated list.
+    ```
+    failed to connect,timeout,access denied,cannot find,critical error
+    ```
 
 ### Offline Error Database
--   **File**: `error_db.json` (must be in the root directory).
--   **Purpose**: A JSON file containing known error codes, their descriptions, and recommended solutions. This allows for instant, offline analysis.
+-   **File**: `error_db.json`
+-   **Purpose**: Provides instant, offline analysis for common errors. You can contribute to this database to make the tool more powerful for everyone.
+-   **Format**: A JSON array of objects, where each object has three properties:
+    ```json
+    [
+      {
+        "ErrorCode": "0x80070005",
+        "Message": "Access is denied.",
+        "Solution": "1. Run the process with elevated (Administrator) privileges. 2. Check NTFS permissions on the target file or folder. 3. Ensure no security software is blocking the action."
+      }
+    ]
+    ```
 
 ### API Keys
--   API keys are used for the optional AI analysis features.
--   The script will prompt you for a key the first time you use a specific AI provider. The key is then saved to a `.txt` file in the root directory for future use.
--   **Key Files**:
-    -   `gemini_key.txt` (Google Gemini)
-    -   `openai_key.txt` (OpenAI)
-    -   `azure_key.txt` (Azure OpenAI)
--   You can also add or update keys proactively using **Option 4** in the main menu.
+When you use an AI provider for the first time, the script will ask for your API key and save it to a local text file for convenience. You can also manage keys proactively via **Option 4** in the menu.
+-   `gemini_key.txt` (Google Gemini)
+-   `openai_key.txt` (OpenAI)
+-   `azure_key.txt` (Azure OpenAI)
 
-### File Locations
--   **Root Directory** (where the `.ps1` script is located):
-    -   `error_db.json`: The offline error database.
-    -   `errorcloud.txt`: Your custom error keywords.
-    -   `gemini_key.txt`, `openai_key.txt`, `azure_key.txt`: Saved API keys.
--   **Analyzed Result** (subfolder created automatically by the script):
-    -   This folder stores all generated `.html` and `.txt` reports.
+### File and Folder Structure
+To function correctly, the files must be organized as follows:
+```
+C:\Tools\LogAnalyzer\
+│
+├── LogAnalyzer.ps1         (The main script)
+├── error_db.json           (The offline error database)
+├── errorcloud.txt          (Your custom keywords)
+├── gemini_key.txt          (Auto-generated)
+│
+└── Analyzed Result\        (Auto-generated subfolder)
+    └── LogAnalysis_...html (Generated reports are saved here)
+    └── LogAnalysis_...txt
+```
+
+---
 
 ## Running the Tool
 1.  Navigate to the script's folder in PowerShell.
-2.  Run the script:
+2.  Execute the script:
     ```powershell
     .\LogAnalyzer.ps1
     ```
-3.  The Main Menu will appear:
-    ```
-    === Universal Log Analyzer Menu (v5.3.9 Gemini Enhanced) ===
-    1. Analyze Log File (Offline DB & optional online search)
-    2. Analyze with AI Only (Directly analyze log with selected AI)
-    3. Select AI Model (Current: gemini-2.0-flash)
-    4. Manage AI Providers & API Keys
-    5. Exit
-    Choose an option (1-5):
-    ```
+3.  The main menu will appear, ready for your selection.
 
 ## Main Menu Options
 
-### 1. Analyze Log File (Offline DB & optional online search)
--   **Input**: The path to a log file (e.g., `C:\Logs\Application.evtx` or `C:\Temp\someservice.log`).
--   **Process**:
-    1.  Parses the log file, automatically handling `.evtx` or text-based formats.
-    2.  Displays a **Detection Results** summary listing all found errors.
-    3.  Prompts you to select a specific error or press Enter to analyze all of them.
-    4.  For each selected error, it queries the local `error_db.json` and displays any matches in a clean, bordered format.
-    5.  For errors not found in the local database, it offers to launch a Google search in your browser.
--   **Output**: A detailed `LogAnalysis_...txt` file and a professional `LogAnalysis_...html` report are saved in the `Analyzed Result` folder.
+#### `1. Analyze Log File (Offline DB & optional online search)`
+This is the standard, hybrid analysis mode.
+-   **Workflow**:
+    1.  Parses the source file(s) to detect all error codes and keywords.
+    2.  For each detected item, it first queries the fast, offline `error_db.json`.
+    3.  If a match is found, it displays the known solution.
+    4.  For any item *not* found in the database, it gives you the option to instantly launch a Google search for it.
+-   **Output**: Saves a comprehensive `.html` report and a `.txt` summary to the `Analyzed Result` folder.
 
-### 2. Analyze with AI Only
--   **Input**: The path to any log file (`.evtx`, `.log`, `.txt`, etc.) and your choice of AI provider.
--   **Process**:
-    1.  Detects all errors and keywords.
-    2.  Skips the offline database search entirely.
-    3.  Sends each detected error and its log context to the selected AI provider for analysis.
-    4.  Displays the AI's response in a standardized, clean, bordered format.
--   **Output**: An `AI_Analysis_...txt` report and a full `LogAnalysis_...html` report are saved.
+#### `2. Analyze with AI Only`
+This mode bypasses the offline database and sends all detected errors directly to an AI for analysis. It is ideal for complex or obscure errors not found in the local database.
+-   **Workflow**:
+    1.  Parses the source file(s) to detect all errors.
+    2.  Prompts you to select an AI provider (Gemini, OpenAI, or Azure).
+    3.  Sends each detected error and its surrounding log context to the AI.
+    4.  Displays the formatted response from the AI, which includes a description and recommended solutions.
+-   **Output**: Saves a dedicated `AI_Analysis_...txt` file and a full `.html` report.
 
-### 3. Select AI Model
--   Allows you to change the AI model used for analysis.
--   **Default**: `gemini-2.0-flash`.
--   You can enter other compatible models like `gpt-4`. The selected model will be used by the corresponding AI provider.
+#### `3. Select AI Model`
+Lets you specify which AI model to use (e.g., `gemini-2.0-flash`, `gpt-4`). This allows you to switch between different models offered by a provider.
 
-### 4. Manage AI Providers & API Keys
--   A central menu for managing your API provider keys.
--   You can add or update keys for Google (Gemini), OpenAI, and Azure OpenAI.
+#### `4. Manage AI Providers & API Keys`
+A settings menu where you can securely add or update the API keys for any of the supported AI providers.
 
-### 5. Exit
--   Closes the tool.
+#### `5. Exit`
+Closes the application.
 
-## Parse-LogFile Function
-This core function now intelligently detects the file type:
--   **For `.evtx` files**, it uses the `Get-WinEvent` cmdlet to properly read event log entries.
--   **For `.log`, `.txt`, and all other files**, it uses `Get-Content` to read them as plain text.
+---
 
-It then processes the text from either source to find hexadecimal codes, error-code phrases, and keywords from your `errorcloud.txt`.
+## The `Parse-LogFile` Function: How It Works
+This is the intelligent core of the script. It automatically identifies the file type and uses the correct method to extract text for analysis:
+
+-   **`.zip` files**: It uses `Expand-Archive` to unpack the contents into a temporary directory. It then **recursively** calls itself to analyze every file inside, ensuring no log is missed. All results are aggregated before the temporary folder is deleted.
+-   **`.xlsx` and `.xls` files**: It leverages the `Import-Excel` module to read all data from all worksheets, converting each row into a searchable text string.
+-   **`.evtx` and `.etl` files**: It uses the native `Get-WinEvent` cmdlet to correctly parse and read messages from these binary Windows Event Log formats.
+-   **All Other Files**: For `.log`, `.txt`, `.html`, `.xml`, or any other format, it falls back to `Get-Content`, reading the file as plain text.
+
+This universal approach allows you to drop almost any file into the analyzer and get meaningful results.
+
+---
 
 ## Output Formats
-The script now enforces a standardized output format for both offline and AI analysis to ensure clarity and readability.
 
-**Example Console Output:**
-
+#### Console Output
+All results are displayed in a clean, easy-to-read format in the console, using borders to separate each analyzed item.
+```
 ======================================================================
 [AI Analysis for '0x80070643']
 
 Description: This is a fatal error during installation, often related to MSI packages, permissions, or corrupted installations.
 
 Recommended Solutions:
-
-Check the application install command in the Intune portal for syntax errors.
-
-Ensure the user or system has adequate permissions to the installation directory.
-
-Test the installation command manually on a test device with elevated privileges.
-
-Clear the CCM cache if the application was previously installed or failed.
+1. Check the application install command in the Intune portal for syntax errors.
+2. Ensure the user or system has adequate permissions to the installation directory.
 ======================================================================
+```
 
+#### File Outputs
+-   **HTML Report (`LogAnalysis_...html`)**: A professional, styled HTML file with a responsive, card-based layout. Each card represents a found error and neatly organizes its description, recommended solutions, and the original log context.
+-   **Text Report (`.txt`)**: A simple text file containing a summary of the analysis, suitable for quick viewing or copying.
 
-## Output Files
--   **Location**: All reports are saved in the `Analyzed Result` subfolder.
--   **Files**:
-    -   `LogAnalysis_YYYYMMDD_HHMMSS.txt`: A text summary of the analysis.
-    -   `LogAnalysis_YYYYMMDD_HHMMSS.html`: A professional HTML report with a card-based layout for each error, showing details and solutions.
-    -   `AI_Analysis_YYYYMMDD_HHMMSS.txt`: A text file containing only the results from the "Analyze with AI Only" option.
+---
 
 ## Troubleshooting
--   **No Detections**:
-    -   Ensure your `errorcloud.txt` contains relevant keywords.
-    -   Verify the log file path is correct and accessible. For `.evtx` files, you may need to run PowerShell as an Administrator.
--   **File Not Found Errors**:
-    -   Make sure `error_db.json` and `errorcloud.txt` are in the same folder as the script.
--   **AI Not Working**:
-    -   Use **Option 4** to verify your API key is set correctly.
-    -   Check your internet connection and any firewalls that might block access to AI endpoints.
--   **HTML Report Issues**:
-    -   Open the report in a modern web browser (Edge, Chrome, Firefox).
-    -   Confirm the file exists in the `Analyzed Result` folder.
+-   **Excel File Errors**: If you see a warning that the `ImportExcel` module is not found, you did not complete Step 2 of the installation. Please run `Install-Module -Name ImportExcel` from an **Administrator** PowerShell window.
+-   **File Not Found**: Ensure `error_db.json` and `errorcloud.txt` are in the same directory as `LogAnalyzer.ps1`.
+-   **No Detections**: Verify the log file path is correct. For protected system logs like the Security event log, you must run PowerShell as an Administrator. Also, check that your `errorcloud.txt` has relevant keywords.
+-   **AI Analysis Fails**: Use **Option 4** to check that your API key is correct. Verify your internet connection and ensure no firewall is blocking access to `googleapis.com` or `openai.com`.
+
+---
+
+## Contributing
+This project is open source, and community contributions are highly encouraged and welcome! You can help make this tool better for everyone.
+
+**How to Contribute:**
+-   **Report Bugs**: If you find a bug, please open an issue on GitHub. Include the error message, the type of file you were analyzing, and steps to reproduce the problem.
+-   **Suggest Features**: Have an idea for a new feature? Open an issue and describe what you would like to see.
+-   **Improve the Error Database**: The `error_db.json` is a community effort. If you discover a solution to a common error code, submit a pull request to add it to the database.
+-   **Submit Code**: If you are a developer, you can help by fixing bugs or adding new features. Fork the repository, make your changes, and submit a pull request.
+
+**[Contribute on GitHub](https://github.com/Blindsinner/LogAnalyzer-Powershell-)**
+
+---
 
 ## License
-Licensed under the MIT License.
+This project is licensed under the MIT License.

@@ -1,7 +1,3 @@
-### Corrected and Improved Document
-
-Here is the revised and corrected version of the documentation. The fixes include grammatical adjustments, improved clarity, consistent formatting, and corrected technical commands for a more professional and user-friendly guide.
-
 -----
 
 # LogAI Analyzer — Universal AI-Enhanced Log Parser (PowerShell Tool)
@@ -57,7 +53,7 @@ LogAI Analyzer is a powerful PowerShell tool designed to parse and diagnose erro
 
 -----
 
-## ⚙️ Installation & Cross-Platform Setup
+## ⚙️ Installation & Cross Platform Setup
 
 ### Windows (Run in an Administrator PowerShell)
 

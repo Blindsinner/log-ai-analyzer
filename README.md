@@ -1,8 +1,11 @@
 # LogAI Analyzer — Universal AI-Enhanced Log Parser (PowerShell Tool)
 
 **Version**: 6.0 &#x20;
+
 **Author**: MD Faysal Mahmud ([faysaliteng@gmail.com](mailto:faysaliteng@gmail.com)) &#x20;
+
 **Repository**: [https://github.com/Blindsinner/log-ai-analyzer](https://github.com/Blindsinner/log-ai-analyzer) &#x20;
+
 **Enhanced With**: Google Gemini, OpenAI, Azure OpenAI, unified offline/online error analysis, multi-format support, and responsive HTML exports.
 
 ---

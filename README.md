@@ -24,19 +24,16 @@ LogAI Analyzer is a powerful PowerShell tool designed to parse and diagnose erro
 
 -----
 
-## 📋 Table of Contents
-
-1.  [Prerequisites](https://www.google.com/search?q=%23-prerequisites)
-2.  [Installation & Cross-Platform Setup](https://www.google.com/search?q=%23-installation--cross-platform-setup)
-3.  [Configuration](https://www.google.com/search?q=%23-configuration)
-4.  [File & Folder Structure](https://www.google.com/search?q=%23-file--folder-structure)
-5.  [Usage Examples](https://www.google.com/search?q=%23-usage-examples)
-6.  [Main Menu Options](https://www.google.com/search?q=%23-main-menu-options)
-7.  [Core Logic](https://www.google.com/search?q=%23-core-logic)
-8.  [Output](https://www.google.com/search?q=%23-output)
-9.  [Troubleshooting](https://www.google.com/search?q=%23-troubleshooting)
-10. [Contributing & License](https://www.google.com/search?q=%23-contributing--license)
-
+1. [Prerequisites](#-prerequisites)
+2. [Installation & Cross-Platform Setup](#-installation--cross-platform-setup)
+3. [Configuration](#-configuration)
+4. [File & Folder Structure](#-file--folder-structure)
+5. [Usage Examples](#-usage-examples)
+6. [Main Menu Options](#-main-menu-options)
+7. [Core Logic](#-core-logic)
+8. [Output](#-output)
+9. [Troubleshooting](#-troubleshooting)
+10. [Contributing & License](#-contributing--license)
 -----
 
 ## 🛠️ Prerequisites

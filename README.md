@@ -28,15 +28,15 @@ LogAI Analyzer is a powerful PowerShell tool designed to parse and diagnose erro
 
 ## 📋 Table of Contents
 
-1. [Prerequisites](#-prerequisites)
-2. [Installation & Cross-Platform Setup](#-installation--cross-platform-setup)
+1. [Prerequisites](#prerequisites)
+2. [Installation & Cross-Platform Setup](#installation-cross-platform-setup)
 3. [Configuration](#-configuration)
 4. [File & Folder Structure](#-file--folder-structure)
 5. [Usage Examples](#-usage-examples)
 6. [Main Menu Options](#-main-menu-options)
 7. [Core Logic](#-core-logic)
 8. [Output](#-output)
-9. [Troubleshooting](#-troubleshooting)
+9. [Troubleshooting](#troubleshooting)
 10. [Contributing & License](#-contributing--license)
 
 -----

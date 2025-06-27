@@ -1,216 +1,217 @@
 # LogAI Analyzer — Universal AI-Enhanced Log Parser (PowerShell Tool)
 
-# Intune/Autopilot Log Analyzer PowerShell Tool
+**Version**: 6.0  
+**Author**: MD Faysal Mahmud ([faysaliteng@gmail.com](mailto:faysaliteng@gmail.com))  
+**Repository**: [https://github.com/Blindsinner/log-ai-analyzer](https://github.com/Blindsinner/log-ai-analyzer)  
+**Enhanced With**: Google Gemini, OpenAI, Azure OpenAI, unified offline/online error analysis, multi-format support, and responsive HTML exports.
 
-**Version**: 6.0\
-**Author**: MD Faysal Mahmud ([faysaliteng@gmail.com](mailto\:faysaliteng@gmail.com))\
-**Repository**: [https://github.com/Blindsinner/log-ai-analyzer](https://github.com/Blindsinner/log-ai-analyzer)\
-**Enhanced With**: Google Gemini AI, OpenAI, Azure OpenAI, unified offline/online error analysis, multi-format support, responsive HTML export.
-
----
+-----
 
 ## 📖 Overview
 
-Intune/Autopilot Log Analyzer is a PowerShell tool for parsing and diagnosing errors from Microsoft Intune, Autopilot, and Windows log sources. It combines a local error database (`error_db.json`) with AI-powered analysis (Google Gemini, OpenAI, Azure OpenAI) to deliver:
+LogAI Analyzer is a powerful PowerShell tool designed to parse and diagnose errors from Microsoft Intune, Autopilot, and other Windows log sources. It intelligently combines a local error database (`error_db.json`) with AI-powered analysis from Google Gemini, OpenAI, and Azure OpenAI to deliver comprehensive diagnostics.
 
-- **Universal File Support**: `.zip`, `.xlsx`/`.xls`, `.evtx`, `.etl`, `.log`, `.txt`, `.html`, `.xml`, and more.
-- **Recursive Archive Extraction**: Processes nested archives automatically.
-- **Hybrid Analysis**:
-  - Offline lookup via `error_db.json`.
-  - AI diagnostics for unmatched errors.
-- **Custom Keyword Detection**: Define tokens in `errorcloud.txt`.
-- **Responsive Reports**: SEO-friendly HTML and plain-text outputs.
-- **Cross-Platform**: Windows PowerShell 5.1+ and PowerShell Core (macOS/Linux).
+### Key Features:
 
----
+  - **Universal File Support**: Natively handles `.zip`, `.xlsx`, `.xls`, `.evtx`, `.etl`, `.log`, `.txt`, `.html`, `.xml`, and more.
+  - **Recursive Archive Extraction**: Automatically processes nested archives to find all relevant logs.
+  - **Hybrid Analysis**:
+      - **Offline**: Fast lookups using the local `error_db.json`.
+      - **Online**: AI-driven diagnostics for unrecognized or complex errors.
+  - **Custom Keyword Detection**: Define your own search tokens in the `errorcloud.txt` file.
+  - **Responsive Reports**: Generates professional, SEO-friendly HTML and plain-text reports.
+  - **Cross-Platform**: Compatible with Windows PowerShell 5.1+ and PowerShell Core (macOS/Linux).
+
+-----
 
 ## 📋 Table of Contents
 
-1. [Prerequisites](#prerequisites)
-2. [Installation & Cross-Platform Setup](#installation--cross-platform-setup)
-3. [Configuration](#configuration)
-4. [File & Folder Structure](#file--folder-structure)
-5. [Usage Examples](#usage-examples)
-6. [Main Menu Options](#main-menu-options)
-7. [Core Logic](#core-logic)
-8. [Output](#output)
-9. [Troubleshooting](#troubleshooting)
-10. [Contributing & License](#contributing--license)
+1.  [Prerequisites](https://www.google.com/search?q=%23-prerequisites)
+2.  [Installation & Cross-Platform Setup](https://www.google.com/search?q=%23-installation--cross-platform-setup)
+3.  [Configuration](https://www.google.com/search?q=%23-configuration)
+4.  [File & Folder Structure](https://www.google.com/search?q=%23-file--folder-structure)
+5.  [Usage Examples](https://www.google.com/search?q=%23-usage-examples)
+6.  [Main Menu Options](https://www.google.com/search?q=%23-main-menu-options)
+7.  [Core Logic](https://www.google.com/search?q=%23-core-logic)
+8.  [Output](https://www.google.com/search?q=%23-output)
+9.  [Troubleshooting](https://www.google.com/search?q=%23-troubleshooting)
+10. [Contributing & License](https://www.google.com/search?q=%23-contributing--license)
 
----
+-----
 
 ## 🛠️ Prerequisites
 
-- **PowerShell**
-  - Windows: PowerShell 5.1 or later.
-  - macOS/Linux: PowerShell Core v7.2+ (`pwsh`).
-- **Module**: `ImportExcel` for `.xlsx`/`.xls` support.
-- **Permissions**: Administrator on Windows (for `.evtx`/`.etl`).
-- **Internet**: For AI analysis and optional online search.
-- **Files**: Place `LogAnalyzer.ps1`, `error_db.json`, and `errorcloud.txt` in one folder.
+  - **PowerShell**:
+      - **Windows**: PowerShell 5.1 or later.
+      - **macOS/Linux**: PowerShell Core v7.2+ (command: `pwsh`).
+  - **PowerShell Module**: The `ImportExcel` module is required for `.xlsx` and `.xls` file support.
+  - **Permissions**: Administrator privileges are required on Windows to analyze `.evtx` and `.etl` files.
+  - **Internet Connection**: Required for AI-based analysis and optional online searches.
+  - **Required Files**: The `LogAnalyzer.ps1`, `error_db.json`, and `errorcloud.txt` files must be located in the same directory.
 
----
+-----
 
 ## ⚙️ Installation & Cross-Platform Setup
 
-### Windows (Admin PowerShell)
+### Windows (Run in an Administrator PowerShell)
 
-1. **Run as Administrator**: Search “PowerShell”, right-click, **Run as administrator**.
-2. **Verify Git**:
-   ```powershell
-   git --version
-   ```
-   - If not found, install Git from [https://git-scm.com/download/win](https://git-scm.com/download/win), then reopen PowerShell as admin.
-3. **Get the Code**:
-   - **With Git**:
-     ```powershell
-     git clone https://github.com/Blindsinner/log-ai-analyzer.git
-     cd log-ai-analyzer
-     ```
-   - **Without Git**:
-     1. Go to [https://github.com/Blindsinner/log-ai-analyzer](https://github.com/Blindsinner/log-ai-analyzer)
-     2. Click **Code → Download ZIP** and extract (e.g., to `C:\Users\YourUser\Downloads\log-ai-analyzer`).
-     3. In PowerShell:
+1.  **Run as Administrator**: Search for “PowerShell”, right-click it, and select **Run as administrator**.
+2.  **Verify Git Installation**:
+    ```powershell
+    git --version
+    ```
+      - If Git is not installed, download it from [https://git-scm.com/download/win](https://git-scm.com/download/win) and restart your administrative PowerShell session.
+3.  **Get the Code**:
+      - **With Git (Recommended)**:
         ```powershell
-        cd "C:\Users\YourUser\Downloads\log-ai-analyzer"
+        git clone https://github.com/Blindsinner/log-ai-analyzer.git
+        cd log-ai-analyzer
         ```
-4. **Install ImportExcel**:
-   ```powershell
-   Install-Module -Name ImportExcel -AcceptLicense -Force
-   ```
-5. **Unblock Script**:
-   ```powershell
-   Unblock-File -Path .\LogAnalyzer.ps1
-   ```
-6. **Run Analyzer**:
-   ```powershell
-   .\LogAnalyzer.ps1
-   ```
+      - **Without Git**:
+        1.  Navigate to [https://github.com/Blindsinner/log-ai-analyzer](https://github.com/Blindsinner/log-ai-analyzer).
+        2.  Click **Code → Download ZIP**.
+        3.  Extract the archive to a known location (e.g., `C:\Users\YourUser\Downloads\log-ai-analyzer`).
+        4.  In PowerShell, navigate to the directory:
+            ```powershell
+            cd "C:\Users\YourUser\Downloads\log-ai-analyzer"
+            ```
+4.  **Install Required Module**:
+    ```powershell
+    Install-Module -Name ImportExcel -AcceptLicense -Force
+    ```
+5.  **Unblock the Script**:
+    ```powershell
+    Unblock-File -Path .\LogAnalyzer.ps1
+    ```
+6.  **Run the Analyzer**:
+    ```powershell
+    .\LogAnalyzer.ps1
+    ```
 
 ### macOS / Linux
 
-1. **Install PowerShell Core** (Ubuntu example):
-   ```bash
-   wget -q https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb
-   sudo dpkg -i packages-microsoft-prod.deb
-   sudo apt update
-   sudo apt install -y powershell
-   ```
-2. **Clone & Navigate**:
-   ```bash
-   git clone https://github.com/Blindsinner/log-ai-analyzer.git
-   cd log-ai-analyzer
-   ```
-3. **Install ImportExcel**:
-   ```bash
-   pwsh -Command "Install-Module -Name ImportExcel -AcceptLicense -Force"
-   ```
-4. **Run Analyzer**:
-   ```bash
-   pwsh ./LogAnalyzer.ps1
-   ```
+1.  **Install PowerShell Core** (Example for Ubuntu):
+    ```bash
+    wget -q https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb
+    sudo dpkg -i packages-microsoft-prod.deb
+    sudo apt-get update
+    sudo apt-get install -y powershell
+    ```
+2.  **Clone Repository & Navigate**:
+    ```bash
+    git clone https://github.com/Blindsinner/log-ai-analyzer.git
+    cd log-ai-analyzer
+    ```
+3.  **Install Required Module**:
+    ```bash
+    pwsh -Command "Install-Module -Name ImportExcel -AcceptLicense -Force"
+    ```
+4.  **Run the Analyzer**:
+    ```bash
+    pwsh ./LogAnalyzer.ps1
+    ```
 
-> **Note**: `.evtx`/`.etl` support is Windows-only; other formats work on all platforms.
+> **Note**: Analysis of `.evtx` and `.etl` files is only supported on Windows. All other formats are fully functional across all platforms.
 
----
+-----
 
 ## 🔧 Configuration
 
-1. **API Keys**: On first AI run, you’ll be prompted to save keys in `gemini_key.txt`, `openai_key.txt`, and `azure_key.txt`.
-2. **Offline DB**: Edit `error_db.json` to add `{ "ErrorCode": "0x1234", "Message": "...", "Solution": "..." }` entries.
-3. **Keywords**: Populate `errorcloud.txt` with comma-separated terms (e.g., `timeout,access denied`).
+1.  **API Keys**: The first time you use an AI-powered feature, the script will prompt you to enter and save your API keys. The keys will be stored locally in `gemini_key.txt`, `openai_key.txt`, and `azure_key.txt`.
+2.  **Offline Database**: You can extend the local database by editing `error_db.json`. Add new entries using the format: `{ "ErrorCode": "0x12345678", "Message": "A brief description.", "Solution": "A detailed solution." }`.
+3.  **Custom Keywords**: Add your own comma-separated keywords to `errorcloud.txt` (e.g., `timeout,access denied,failed to connect`) to customize error detection.
 
----
+-----
 
 ## 📂 File & Folder Structure
 
-```
+```plaintext
 log-ai-analyzer/
-├── LogAnalyzer.ps1       # Main script
-├── error_db.json         # Offline error data
-├── errorcloud.txt        # Custom keyword list
-├── gemini_key.txt        # Created on first run
-├── openai_key.txt        # Created on first run
-├── azure_key.txt         # Created on first run
-└── Analyzed Results/     # Output files
+├── LogAnalyzer.ps1         # Main script
+├── error_db.json           # Offline error database
+├── errorcloud.txt          # Custom keyword list
+├── gemini_key.txt          # Created automatically on first AI run
+├── openai_key.txt          # Created automatically on first AI run
+├── azure_key.txt           # Created automatically on first AI run
+└── Analyzed Results/         # Default directory for output files
     ├── LogAnalysis_YYYYMMDD_HHMMSS.html
     ├── LogAnalysis_YYYYMMDD_HHMMSS.txt
     └── AI_Analysis_YYYYMMDD_HHMMSS.txt
 ```
 
----
+-----
 
 ## 🚀 Usage Examples
 
-### Offline + Online Search
+### Hybrid Analysis (Offline DB + Online Search)
 
 ```powershell
-.
-\LogAnalyzer.ps1
-# Select option 1
-Enter path: C:\Logs\example.evtx
+.\LogAnalyzer.ps1
+# Select option 1 from the menu
+# Enter the path to your log file, e.g., C:\Logs\example.evtx
 ```
 
-### ZIP Archive Scan
+### Analyze a ZIP Archive
 
 ```powershell
-.
-\LogAnalyzer.ps1
-# Option 1
-Enter path: ./ArchiveLogs.zip
+.\LogAnalyzer.ps1
+# Select option 1
+# Enter the path to the archive, e.g., C:\Path\To\ArchiveLogs.zip
 ```
 
 ### AI-Only Analysis
 
 ```powershell
-.
-\LogAnalyzer.ps1
-# Option 2
-Enter path: C:\Logs\example.log
+.\LogAnalyzer.ps1
+# Select option 2 for AI-only analysis
+# Enter the path to your log file, e.g., C:\Logs\verbose-debug.log
 ```
 
----
+-----
 
 ## 🔍 Main Menu Options
 
+```plaintext
 === Universal Log Analyzer Menu (v6.0 Gemini Enhanced) ===
 1. Analyze Log File (Offline DB & optional online search)
 2. Analyze with AI Only (Directly analyze log with selected AI)
-3. Select AI Model (Current: gemini-2.0-flash)
+3. Select AI Model (Current: gemini-pro)
 4. Manage AI Providers & API Keys
 5. Exit
 Choose an option (1-5):
+```
+
+-----
 
 ## 🧩 Core Logic
 
-1. Determine file type by extension.
-2. Extract archives or import Excel sheets.
-3. Parse event logs or text lines.
-4. Match hex codes, error phrases, and keywords.
-5. Lookup offline DB, then AI for unknowns.
+1.  **File Identification**: The script first determines the file type based on its extension.
+2.  **Extraction & Parsing**: Archives are recursively extracted, and Excel files are imported. Event logs (`.evtx`), trace logs (`.etl`), and plain-text logs are parsed accordingly.
+3.  **Pattern Matching**: The content is scanned for hexadecimal error codes, error-related phrases, and custom keywords from `errorcloud.txt`.
+4.  **Hybrid Resolution**: Detected errors are first looked up in the local `error_db.json`. If an error is not found, it is sent to the selected AI model for advanced analysis.
 
----
+-----
 
 ## 📊 Output
 
-- **Console**: Bordered sections.
-- **Text**: `*.txt` summaries.
-- **HTML**: Responsive, card-based.
-- Saved under `Analyzed Results/` with timestamps.
+  - **Console**: Real-time progress and results are displayed in neatly bordered sections.
+  - **Text Files**: `*.txt` files provide a simple summary of findings.
+  - **HTML Reports**: `*.html` files offer a responsive, card-based layout for easy reading and sharing.
+  - All reports are saved to the `Analyzed Results/` folder with a timestamp for clear organization.
 
----
+-----
 
 ## 🛠️ Troubleshooting
 
-- **ImportExcel missing**: `Install-Module ImportExcel` as admin.
-- **Permission denied**: Run elevated.
-- **No detections**: Verify file path and keywords.
-- **AI errors**: Check API keys and network.
+  - **`ImportExcel` Module Not Found**: Ensure the module is installed by running `Install-Module ImportExcel -Force` in an administrative PowerShell session.
+  - **Permission Denied Errors**: The script requires elevated (administrator) privileges to read certain system logs (`.evtx`, `.etl`). Right-click PowerShell and select "Run as administrator."
+  - **No Errors Detected**: Double-check that the file path is correct and that the logs contain searchable error codes or keywords defined in `errorcloud.txt`.
+  - **AI Analysis Fails**: Verify that your API keys are correct and that you have a stable internet connection. Check the AI provider's status page for any outages.
 
----
+-----
 
 ## 🤝 Contributing & License
 
-Contributions welcome: issues, PRs, DB updates, docs.\
-Licensed under MIT. See `LICENSE`.
+We welcome contributions\! Feel free to open issues, submit pull requests, update the error database, or improve the documentation.
 
+This project is licensed under the MIT License. See the `LICENSE` file in the repository for details.

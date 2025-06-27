@@ -1,7 +1,8 @@
 # Intune/Autopilot Log Analyzer PowerShell Tool
-# Version: 5.3.9 (Universal Log Support including .evtx)
+# Version: 6.0 (Universal Log Support including .evtx, .etl, .zip, .xlsx, .html, and all text formats)
 # Author: MD FAYSAL MAHMUD (faysaliteng@gmail.com)
 # Enhanced with Gemini AI, unified error analysis, multi-file support, HTML export, and online search for missing entries
+# NOTE: This version requires the 'ImportExcel' module. Run 'Install-Module -Name ImportExcel' as Admin first.
 
 # -----------------------------------
 # Set output directory to 'Analyzed Result' folder in script location and create it if it doesn't exist
@@ -16,7 +17,7 @@ if (-not (Test-Path $OutputDir)) {
 $apiKeyPath     = Join-Path $ScriptDir "apikey.txt"
 $errorCloudPath = Join-Path $ScriptDir "errorcloud.txt"
 $errorDbPath    = Join-Path $ScriptDir "error_db.json"
-$global:model   = 'gemini-2.0-flash' # Default to the latest Gemini model
+$global:model   = 'gemini-2.0-flash' # Default to a powerful and efficient Gemini model
 
 # -----------------------------------
 # Ensure errorcloud.txt exists (contains comma-separated keywords to detect). If missing, create an empty placeholder.
@@ -39,12 +40,20 @@ function Get-ErrorCloudTokens {
 }
 
 # -----------------------------------
-# Function Parse-LogFile: extracts hex-codes and keywords from the log
+# Function Parse-LogFile: extracts hex-codes and keywords from various log file formats.
+# Supports .zip, .xlsx, .xls, .evtx, .etl, .log, .txt, .html, and any other text-readable format.
 # -----------------------------------
 function Parse-LogFile {
     param(
-        [string]$FilePath
+        [string]$FilePath,
+        [int]$RecursionDepth = 0 # Safety mechanism to prevent infinite loops with nested zips
     )
+
+    # Prevent too many nested zip extractions
+    if ($RecursionDepth -gt 5) {
+        Write-Warning "Maximum recursion depth reached for zip files. Skipping further extraction."
+        return $null
+    }
 
     # Trim surrounding quotes if the user included them
     $FilePath = $FilePath.Trim('"')
@@ -53,28 +62,65 @@ function Parse-LogFile {
         return $null
     }
     
-    # *** NEW: Universal Log Reading Logic ***
     $lines = @()
-    $fileExtension = [System.IO.Path]::GetExtension($FilePath)
+    $fileExtension = [System.IO.Path]::GetExtension($FilePath).ToLower()
 
     try {
-        if ($fileExtension -eq '.evtx') {
-            Write-Host "Reading .evtx file. This may take a moment for large files..." -ForegroundColor Cyan
-            # Use Get-WinEvent for .evtx files and select the message part
-            $lines = Get-WinEvent -Path $FilePath -ErrorAction Stop | ForEach-Object { $_.Message }
-        } else {
-            # Use Get-Content for all other text-based files (.log, .txt, etc.)
+        # --- NEW: ZIP File Handling ---
+        if ($fileExtension -eq '.zip') {
+            Write-Host "Analyzing ZIP archive: $FilePath" -ForegroundColor Cyan
+            $tempDir = Join-Path $env:TEMP "LogAnalyzer_$(New-Guid)"
+            New-Item -Path $tempDir -ItemType Directory -Force | Out-Null
+            
+            Write-Host "Extracting to temporary location: $tempDir"
+            Expand-Archive -Path $FilePath -DestinationPath $tempDir -Force
+            
+            # Recursively call this function for each file inside the zip
+            $innerFiles = Get-ChildItem -Path $tempDir -Recurse -File
+            Write-Host "Found $($innerFiles.Count) files to analyze inside the archive."
+            foreach ($file in $innerFiles) {
+                # For each file inside, we parse it and add its lines to our collection
+                $innerParsedContent = Parse-LogFile -FilePath $file.FullName -RecursionDepth ($RecursionDepth + 1)
+                if ($null -ne $innerParsedContent) {
+                    # This simplified approach aggregates the raw lines from all sub-files
+                    $lines += $innerParsedContent.AllLines
+                }
+            }
+            Remove-Item -Path $tempDir -Recurse -Force # Clean up
+        }
+        # --- NEW: Excel File Handling ---
+        elseif ($fileExtension -in '.xlsx', '.xls') {
+            Write-Host "Reading Excel file. This requires the 'ImportExcel' module." -ForegroundColor Cyan
+            if (-not (Get-Module -ListAvailable -Name ImportExcel)) {
+                Write-Warning "The 'ImportExcel' module is not installed. Please run 'Install-Module -Name ImportExcel' in an Administrator PowerShell session."
+                return $null
+            }
+            # Import all data from all sheets, converting every cell to a string for parsing
+            Import-Excel -Path $FilePath | ForEach-Object {
+                $rowAsString = $_.PSObject.Properties.Value -join ' '
+                $lines += $rowAsString
+            }
+        }
+        # --- Existing Logic for Event Logs ---
+        elseif ($fileExtension -in '.evtx', '.etl') {
+            Write-Host "Reading $($fileExtension.ToUpper()) file. This may take a moment..." -ForegroundColor Cyan
+            $lines = Get-WinEvent -Path $FilePath -Oldest -ErrorAction Stop | ForEach-Object { $_.Message }
+        } 
+        # --- Existing Logic for Text-Based Files (includes .log, .txt, .html, .xml, etc.) ---
+        else {
+            Write-Host "Reading text-based file ($fileExtension)..."
             $lines = Get-Content -Path $FilePath -ErrorAction Stop
         }
     } catch {
-        Write-Warning "Error reading log file '$FilePath': $_"
+        Write-Warning "An error occurred while reading '$FilePath': $_"
         return $null
     }
     
-    Write-Host "Successfully read $($lines.Count) log entries." -ForegroundColor Green
+    Write-Host "Successfully processed $($lines.Count) potential log entries from all sources." -ForegroundColor Green
 
-    $codes    = @{}  # hashtable: hex code -> list of matching lines
-    $keywords = @{}  # hashtable: keyword phrase -> list of matching lines
+    # The rest of the parsing logic remains the same, operating on the aggregated lines
+    $codes       = @{}
+    $keywords    = @{}
     $cloudTokens = Get-ErrorCloudTokens
 
     foreach ($l in $lines) {
@@ -105,8 +151,15 @@ function Parse-LogFile {
             }
         }
     }
-    return @{ Codes = $codes; Keywords = $keywords }
+    
+    # Return a consistent object containing the parsed data and the raw lines for context
+    return @{ 
+        Codes = $codes; 
+        Keywords = $keywords;
+        AllLines = $lines
+    }
 }
+
 
 # -----------------------------------
 # Function Find-ErrorInDatabase: looks up a given error code in error_db.json
@@ -351,7 +404,7 @@ function Export-LogAnalysisToHtml {
     }
 
     $body += @"
-        <div class="footer"><p>Generated by Universal Log Analyzer v5.3.9</p></div>
+        <div class="footer"><p>Generated by Universal Log Analyzer v6.0</p></div>
     </div>
 </body>
 </html>
@@ -400,7 +453,7 @@ function Manage-AIProviders {
 # -----------------------------------
 function Main-Menu {
     while ($true) {
-        Write-Host "`n=== Universal Log Analyzer Menu (v5.3.9 Gemini Enhanced) ===" -ForegroundColor Cyan
+        Write-Host "`n=== Universal Log Analyzer Menu (v6.0 Gemini Enhanced) ===" -ForegroundColor Cyan
         Write-Host "1. Analyze Log File (Offline DB & optional online search)"
         Write-Host "2. Analyze with AI Only (Directly analyze log with selected AI)"
         Write-Host "3. Select AI Model (Current: $($global:model))"
@@ -410,7 +463,7 @@ function Main-Menu {
 
         switch ($choice) {
             '1' { # Standard Analysis
-                $LogFilePath = Read-Host 'Enter path to log file (e.g., C:\Logs\Application.evtx or IntuneManagementExtension.log)'
+                $LogFilePath = Read-Host 'Enter path to log file (e.g., C:\Logs\IntuneLogs.zip, Report.xlsx, Application.evtx)'
                 $data = Parse-LogFile -FilePath $LogFilePath
                 if (-not $data) { continue }
 
@@ -430,9 +483,9 @@ function Main-Menu {
                     else { Write-Warning "Specified item '$selTrim' not found."; continue }
                 }
 
-                $outputPath        = Join-Path $OutputDir "LogAnalysis_$(Get-Date -Format 'yyyyMMdd_HHmmss').txt"
-                $missingItems      = @()
-                $analysisResults   = [ordered]@{ Contexts = @{}; DatabaseMatches = @{}; AIAnalyses = @{} }
+                $outputPath      = Join-Path $OutputDir "LogAnalysis_$(Get-Date -Format 'yyyyMMdd_HHmmss').txt"
+                $missingItems    = @()
+                $analysisResults = [ordered]@{ Contexts = @{}; DatabaseMatches = @{}; AIAnalyses = @{} }
 
                 foreach ($target in $targets) {
                     $analysisResults.Contexts[$target.Value] = if ($target.Type -eq 'Code') { ($data.Codes[$target.Value] -join "`n") } else { ($data.Keywords[$target.Value] -join "`n") }
@@ -461,7 +514,7 @@ function Main-Menu {
             }
 
             '2' { # AI Only Analysis
-                $LogFilePath = Read-Host 'Enter path to log file (e.g., C:\Logs\Application.evtx or IntuneManagementExtension.log)'
+                $LogFilePath = Read-Host 'Enter path to log file (e.g., C:\Logs\IntuneLogs.zip, Report.xlsx, Application.evtx)'
                 $data = Parse-LogFile -FilePath $LogFilePath
                 if (-not $data -or ($data.Codes.Count -eq 0 -and $data.Keywords.Count -eq 0)) { Write-Warning "No errors detected in the log file or file not found."; continue }
 

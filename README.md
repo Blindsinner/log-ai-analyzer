@@ -213,7 +213,7 @@ Choose an option (1-5):
 
 ---
 
-## 🤝 Contributing & License {#contributing--license}
+## 🤝 Contributing & License (#contributing--license)
 
 Contributions welcome! Open issues, submit PRs, update the error DB, or enhance docs.
 

@@ -7,7 +7,7 @@
 **Repository**: [https://github.com/Blindsinner/log-ai-analyzer](https://github.com/Blindsinner/log-ai-analyzer) &#x20;
 
 **Enhanced With**: Google Gemini, OpenAI, Azure OpenAI, unified offline/online error analysis, multi-format support, and responsive HTML exports.
-
+**Another Log Analyzer Web Verison: [AI-Powered-Log-Analyzer-Ultimate GUI (WEB)](https://github.com/Blindsinner/AI-Powered-Log-Analyzer-Ultimate) &#x20;
 ---
 
 ## 📖 Overview
